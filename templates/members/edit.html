@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Edit Member #{{ m.MemberId }}</h3>
+<form method="post">
+  <label>Name<input name="Name" value="{{ m.Name }}" required></label>
+  <label>Email<input name="Email" type="email" value="{{ m.Email }}"></label>
+  <label>Phone<input name="PhoneNo" value="{{ m.PhoneNo }}"></label>
+  <label>Address<input name="Address" value="{{ m.Address }}"></label>
+  <label>DoB<input name="DoB" type="date" value="{{ m.DoB }}"></label>
+  <label>JoinDate<input name="JoinDate" type="date" value="{{ m.JoinDate }}"></label>
+  <label>Gender
+    <select name="Gender">
+      <option value="">--</option>
+      <option value="M" {{ 'selected' if m.Gender=='M' else '' }}>M</option>
+      <option value="F" {{ 'selected' if m.Gender=='F' else '' }}>F</option>
+      <option value="Other" {{ 'selected' if m.Gender=='Other' else '' }}>Other</option>
+    </select>
+  </label>
+  <label>Package
+    <select name="PackageId">
+      <option value="">--</option>
+      {% for p in packages %}
+        <option value="{{ p.PackageId }}" {{ 'selected' if m.PackageId==p.PackageId else '' }}>{{ p.PackageName }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Trainer
+    <select name="TrainerId">
+      <option value="">--</option>
+      {% for t in trainers %}
+        <option value="{{ t.TrainerId }}" {{ 'selected' if m.TrainerId==t.TrainerId else '' }}>{{ t.TrainerName }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit">Save</button>
+  <a role="button" href="/members" class="secondary">Cancel</a>
+</form>
+{% endblock %}
+
+

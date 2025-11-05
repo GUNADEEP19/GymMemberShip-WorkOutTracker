@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Database Users & Privileges</h3>
+<form method="post">
+  <label>Username<input name="username" required></label>
+  <label>Password<input name="password" type="password" required></label>
+  <label>Host<input name="host" value="%"></label>
+  <label>Role
+    <select name="db_role" required>
+      <option value="admin">Admin (ALL PRIVILEGES)</option>
+      <option value="app_user">App User (CRUD + EXECUTE)</option>
+      <option value="trainer_user">Trainer (SELECT + EXECUTE)</option>
+    </select>
+  </label>
+  <button type="submit">Create/Update</button>
+</form>
+{% endblock %}
+
+

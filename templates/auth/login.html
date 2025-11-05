@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Login</h3>
+
+<details open>
+  <summary>Admin</summary>
+  <form method="post">
+    <input type="hidden" name="type" value="admin" />
+    <label>Password <input name="password" type="password" required></label>
+    <button type="submit">Login as Admin</button>
+  </form>
+</details>
+
+<details>
+  <summary>Member</summary>
+  <form method="post">
+    <input type="hidden" name="type" value="member" />
+    <label>Member
+      <select name="member_id" required>
+        {% for m in members %}
+          <option value="{{ m.MemberId }}">{{ m.Name }} ({{ m.MemberId }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Login as Member</button>
+  </form>
+</details>
+
+<details>
+  <summary>Trainer</summary>
+  <form method="post">
+    <input type="hidden" name="type" value="trainer" />
+    <label>Trainer
+      <select name="trainer_id" required>
+        {% for t in trainers %}
+          <option value="{{ t.TrainerId }}">{{ t.TrainerName }} ({{ t.TrainerId }})</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="submit">Login as Trainer</button>
+  </form>
+</details>
+{% endblock %}
+
+

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Members</h3>
+<p><a role="button" href="/members/create">+ Add Member</a></p>
+<table>
+  <thead>
+    <tr>
+      <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Package</th><th>Trainer</th><th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for m in rows %}
+    <tr>
+      <td>{{ m.MemberId }}</td>
+      <td>{{ m.Name }}</td>
+      <td>{{ m.Email }}</td>
+      <td>{{ m.PhoneNo }}</td>
+      <td>{{ m.PackageId }}</td>
+      <td>{{ m.TrainerId }}</td>
+      <td>
+        <a href="/members/{{ m.MemberId }}/edit">Edit</a>
+        <form method="post" action="/members/{{ m.MemberId }}/delete" style="display:inline" onsubmit="return confirm('Delete member?');">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+ </table>
+{% endblock %}
+
+

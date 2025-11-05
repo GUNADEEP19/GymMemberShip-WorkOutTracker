@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Make Payment</h3>
+<form method="post">
+  <label>Member
+    <select name="member_id" required>
+      {% for m in members %}
+      <option value="{{ m.MemberId }}">{{ m.Name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Package
+    <select name="package_id" required>
+      {% for p in packages %}
+      <option value="{{ p.PackageId }}">{{ p.PackageName }} ({{ p.Price }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Amount<input name="amount" type="number" step="0.01" required></label>
+  <label>Mode<input name="mode" required></label>
+  <button type="submit">Pay</button>
+</form>
+
+<h4>Recent Audit</h4>
+<table>
+  <thead>
+    <tr><th>AuditId</th><th>PaymentId</th><th>Action</th><th>NewAmount</th><th>OldAmount</th><th>TS</th></tr>
+  </thead>
+  <tbody>
+    {% for a in audits %}
+    <tr>
+      <td>{{ a.AuditId }}</td><td>{{ a.PaymentId }}</td><td>{{ a.ActionType }}</td>
+      <td>{{ a.NewAmount }}</td><td>{{ a.OldAmount }}</td><td>{{ a.ActionTS }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+

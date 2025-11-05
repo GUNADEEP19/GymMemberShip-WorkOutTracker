@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gym DBMS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  </head>
+  <body>
+    <nav class="container">
+      <ul>
+        <li><strong>Gym DBMS</strong></li>
+      </ul>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/queries">Queries</a></li>
+        <li><a href="/actions/make_payment">Payments</a></li>
+        <li><a href="/actions/enroll">Enroll</a></li>
+        <li><a href="/members">Members</a></li>
+        <li><a href="/db-users">DB Users</a></li>
+        <li><a href="/login">Login</a></li>
+        <li><a href="/logout">Logout</a></li>
+      </ul>
+    </nav>
+
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div>
+            {% for cat, msg in messages %}
+              <article class="{{ 'secondary' if cat=='success' else 'contrast' }}">{{ msg }}</article>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+  </html>
+
+
