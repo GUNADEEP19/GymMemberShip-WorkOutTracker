@@ -2,6 +2,10 @@
 -- Foreign keys enforce referential integrity (Consistency)
 -- Constraints and triggers validate data integrity (Consistency)
 -- Procedures use transactions for atomicity (see REVIEW-3.sql)
+-- 
+-- RELATIONAL SCHEMA CHANGES: NO
+-- The relational schema (tables, columns, relationships) remains unchanged.
+-- Only added: AUTO_INCREMENT, foreign key actions, constraints, and indexes.
 
 CREATE DATABASE IF NOT EXISTS GymMemberShip_WorkOutTracker
   CHARACTER SET utf8mb4
