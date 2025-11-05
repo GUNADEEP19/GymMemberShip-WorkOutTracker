@@ -1,0 +1,31 @@
+ER and Schema
+Design ER with 4–5 entities (min) and correct relational mapping.
+Normalize to at least 3NF.
+
+Security and Access
+Create DB users with varied privileges; prefer a simple GUI to manage roles.
+
+DB Logic
+Implement triggers (with GUI demonstration).
+Implement stored procedures and functions (with GUI demonstration).
+
+CRUD + GUI
+Create: all tables via the app.
+Read: views/pages to fetch data with filters.
+Update: editable forms.
+Delete: safe deletes with checks.
+All CRUD should be operable from a GUI (web or standalone).
+
+Queries required (as per rubrics)
+1 Nested query (+ GUI).
+1 Join query (+ GUI).
+1 Aggregate query (+ GUI).
+
+Reviews (what to be ready with)
+Review-1: User Requirement Spec, ER diagram, Relational schema.
+Review-2: Tables created with constraints; demonstrate DDL/DML.
+Review-3: Triggers, Procedures, Functions; viva on them.
+Review-4: Final demo against the above rubrics.
+
+Deployment
+Deliver a working standalone or web-based app connected to the relational DB.

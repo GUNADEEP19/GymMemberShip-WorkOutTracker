@@ -1,4 +1,11 @@
 -- STEP 1 — USE DATABASE
+-- ACID Compliance Notes:
+-- ATOMICITY: All procedures use START TRANSACTION/COMMIT with error handlers
+--            AUTO_INCREMENT used instead of MAX()+1 (prevents race conditions)
+-- CONSISTENCY: Foreign keys, CHECK constraints, UNIQUE constraints, triggers validate data
+-- ISOLATION: InnoDB default isolation level (REPEATABLE READ) ensures transaction isolation
+-- DURABILITY: InnoDB engine with transaction logs ensures committed changes persist
+
 USE GymMemberShip_WorkOutTracker;
 
 
@@ -22,7 +29,7 @@ CREATE TABLE Payment_Audit (
 
 
 -- STEP 3 — TRIGGERS
--- 3.1 Attendance trigger (no checkout before check-in)
+-- 3.1 Attendance triggers (validate times on INSERT and UPDATE)
 DELIMITER //
 CREATE TRIGGER trg_attendance_check_times
 BEFORE INSERT ON Attendance
@@ -34,7 +41,19 @@ BEGIN
 END//
 DELIMITER ;
 
--- 3.2 WorkoutTracker trigger (validate sets)
+-- 3.1b Attendance UPDATE trigger
+DELIMITER //
+CREATE TRIGGER trg_attendance_check_times_upd
+BEFORE UPDATE ON Attendance
+FOR EACH ROW
+BEGIN
+  IF NEW.CheckOutTime < NEW.CheckInTime THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Check-out time cannot be before check-in time';
+  END IF;
+END//
+DELIMITER ;
+
+-- 3.2 WorkoutTracker trigger (validate sets on INSERT and UPDATE)
 DELIMITER //
 CREATE TRIGGER trg_workout_validate
 BEFORE INSERT ON WorkOutTracker
@@ -47,99 +66,224 @@ BEGIN
 END//
 DELIMITER ;
 
--- 3.3 Payment trigger (auto-audit & validate)
+-- 3.2b WorkoutTracker UPDATE trigger (validate sets on update)
+DELIMITER //
+CREATE TRIGGER trg_workout_validate_upd
+BEFORE UPDATE ON WorkOutTracker
+FOR EACH ROW
+BEGIN
+  IF NEW.SetsComplete < 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SetsComplete cannot be negative';
+  END IF;
+  SET NEW.Status = CONCAT(UCASE(LEFT(NEW.Status,1)), LCASE(SUBSTRING(NEW.Status,2)));
+END//
+DELIMITER ;
+
+-- 3.3 Payment trigger (validate before insert, audit after)
+-- Validation trigger (BEFORE INSERT to prevent invalid data)
+DELIMITER //
+CREATE TRIGGER trg_payment_validate
+BEFORE INSERT ON Payment
+FOR EACH ROW
+BEGIN
+  DECLARE pkg_price DECIMAL(8,2);
+  SELECT Price INTO pkg_price FROM Package WHERE PackageId=NEW.PackageId;
+  IF pkg_price IS NULL THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Package does not exist';
+  END IF;
+  IF NEW.Amount <> pkg_price THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Payment amount must match package price';
+  END IF;
+END//
+DELIMITER ;
+
+-- Audit trigger (AFTER INSERT to log successful insertions)
 DELIMITER //
 CREATE TRIGGER trg_payment_audit
 AFTER INSERT ON Payment
 FOR EACH ROW
 BEGIN
-  DECLARE pkg_price DECIMAL(8,2);
-  SELECT Price INTO pkg_price FROM Package WHERE PackageId=NEW.PackageId;
-  IF NEW.Amount <> pkg_price THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Payment amount must match package price';
-  END IF;
-
   INSERT INTO Payment_Audit(PaymentId,ActionType,NewAmount,NewMode,NewMemberId,NewPackageId)
   VALUES(NEW.PaymentId,'INSERT',NEW.Amount,NEW.Mode,NEW.MemberId,NEW.PackageId);
 END//
 DELIMITER ;
 
-
--- STEP 4 — STORED PROCEDURES
--- 4.1 Enroll a member to a workout plan
+-- 3.4 Payment UPDATE validation (validate before update)
 DELIMITER //
-CREATE PROCEDURE sp_enroll_member_to_plan(IN p_member INT, IN p_plan INT)
+CREATE TRIGGER trg_payment_validate_upd
+BEFORE UPDATE ON Payment
+FOR EACH ROW
 BEGIN
-  IF NOT EXISTS(SELECT 1 FROM Member_WorkOutPlan WHERE MemberId=p_member AND PlanId=p_plan) THEN
-    INSERT INTO Member_WorkOutPlan(MemberId,PlanId) VALUES(p_member,p_plan);
+  DECLARE pkg_price DECIMAL(8,2);
+  -- If amount or package changed, validate amount matches package price
+  IF NEW.Amount <> OLD.Amount OR NEW.PackageId <> OLD.PackageId THEN
+    SELECT Price INTO pkg_price FROM Package WHERE PackageId=NEW.PackageId;
+    IF pkg_price IS NULL THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Package does not exist';
+    END IF;
+    IF NEW.Amount <> pkg_price THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Payment amount must match package price';
+    END IF;
   END IF;
 END//
 DELIMITER ;
 
+-- 3.5 Payment UPDATE audit (captures before/after values)
+DELIMITER //
+CREATE TRIGGER trg_payment_audit_upd
+AFTER UPDATE ON Payment
+FOR EACH ROW
+BEGIN
+  INSERT INTO Payment_Audit(
+    PaymentId,ActionType,
+    OldAmount,NewAmount,
+    OldMode,NewMode,
+    OldTimeStamp,NewTimeStamp,
+    OldMemberId,NewMemberId,
+    OldPackageId,NewPackageId
+  )
+  VALUES(
+    OLD.PaymentId,'UPDATE',
+    OLD.Amount,NEW.Amount,
+    OLD.Mode,NEW.Mode,
+    OLD.TimeStamp,NEW.TimeStamp,
+    OLD.MemberId,NEW.MemberId,
+    OLD.PackageId,NEW.PackageId
+  );
+END//
+DELIMITER ;
 
--- 4.2 Log a workout entry
+-- 3.6 Payment DELETE audit (stores the removed row)
+DELIMITER //
+CREATE TRIGGER trg_payment_audit_del
+AFTER DELETE ON Payment
+FOR EACH ROW
+BEGIN
+  INSERT INTO Payment_Audit(
+    PaymentId,ActionType,
+    OldAmount,OldMode,OldTimeStamp,OldMemberId,OldPackageId
+  )
+  VALUES(
+    OLD.PaymentId,'DELETE',
+    OLD.Amount,OLD.Mode,OLD.TimeStamp,OLD.MemberId,OLD.PackageId
+  );
+END//
+DELIMITER ;
+
+
+-- STEP 4 — STORED PROCEDURES
+-- 4.1 Enroll a member to a workout plan (atomic operation)
+DELIMITER //
+CREATE PROCEDURE sp_enroll_member_to_plan(IN p_member INT, IN p_plan INT)
+BEGIN
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  
+  START TRANSACTION;
+  IF NOT EXISTS(SELECT 1 FROM Member_WorkOutPlan WHERE MemberId=p_member AND PlanId=p_plan) THEN
+    INSERT INTO Member_WorkOutPlan(MemberId,PlanId) VALUES(p_member,p_plan);
+  END IF;
+  COMMIT;
+END//
+DELIMITER ;
+
+
+-- 4.2 Log a workout entry (atomic, uses AUTO_INCREMENT)
 DELIMITER //
 CREATE PROCEDURE sp_log_workout(
   IN p_member INT, IN p_plan INT, IN p_exercise INT,
   IN p_sets INT, IN p_notes TEXT, IN p_date DATE)
 BEGIN
-  INSERT INTO WorkOutTracker
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  
+  START TRANSACTION;
+  INSERT INTO WorkOutTracker(
+    DateLogged, Status, Day, WeekNumber, SetsComplete, Notes,
+    MemberId, PlanId, ExerciseId
+  )
   VALUES(
-    (SELECT COALESCE(MAX(TrackerId),0)+1 FROM WorkOutTracker),
-    p_date,'Completed',DAYNAME(p_date),WEEK(p_date,1),
-    p_sets,p_notes,p_member,p_plan,p_exercise
+    p_date, 'Completed', DAYNAME(p_date), WEEK(p_date,1),
+    p_sets, p_notes, p_member, p_plan, p_exercise
   );
+  COMMIT;
 END//
 DELIMITER ;
 
 
--- 4.3 Record attendance
+-- 4.3 Record attendance (atomic, uses AUTO_INCREMENT)
 DELIMITER //
 CREATE PROCEDURE sp_record_attendance(
   IN p_member INT, IN p_date DATE,
   IN p_in TIME, IN p_out TIME)
 BEGIN
-  INSERT INTO Attendance
-  VALUES(
-    (SELECT COALESCE(MAX(AttendanceId),0)+1 FROM Attendance),
-    p_member,p_date,p_in,p_out
-  );
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  
+  START TRANSACTION;
+  INSERT INTO Attendance(MemberId, Date, CheckInTime, CheckOutTime)
+  VALUES(p_member, p_date, p_in, p_out);
+  COMMIT;
 END//
 DELIMITER ;
 
 
--- 4.4 Make a payment
+-- 4.4 Make a payment (atomic, uses AUTO_INCREMENT, triggers handle validation & audit)
 DELIMITER //
 CREATE PROCEDURE sp_make_payment(
   IN p_member INT, IN p_package INT, IN p_amount DECIMAL(8,2), IN p_mode VARCHAR(50))
 BEGIN
-  INSERT INTO Payment
-  VALUES(
-    (SELECT COALESCE(MAX(PaymentId),0)+1 FROM Payment),
-    p_amount,p_mode,NOW(),p_member,p_package
-  );
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  
+  START TRANSACTION;
+  INSERT INTO Payment(Amount, Mode, TimeStamp, MemberId, PackageId)
+  VALUES(p_amount, p_mode, NOW(), p_member, p_package);
+  -- Trigger validates amount and creates audit entry atomically
+  COMMIT;
 END//
 DELIMITER ;
 
 
 -- STEP 5 — STORED FUNCTIONS
--- 5.1 Get membership end date
+-- 5.1 Get membership end date (returns NULL if member has no payments)
 DELIMITER //
 CREATE FUNCTION fn_membership_end_date(p_member INT)
 RETURNS DATE
 READS SQL DATA
 BEGIN
-  DECLARE v_ts DATETIME; DECLARE v_weeks INT;
+  DECLARE v_ts DATETIME; 
+  DECLARE v_weeks INT;
+  DECLARE v_result DATE;
+  
   SELECT p.TimeStamp, pkg.DurationWeeks
   INTO v_ts, v_weeks
   FROM Payment p JOIN Package pkg ON p.PackageId=pkg.PackageId
   WHERE p.MemberId=p_member ORDER BY p.TimeStamp DESC LIMIT 1;
-  RETURN DATE_ADD(DATE(v_ts), INTERVAL v_weeks WEEK);
+  
+  IF v_ts IS NULL OR v_weeks IS NULL THEN
+    RETURN NULL;
+  END IF;
+  
+  SET v_result = DATE_ADD(DATE(v_ts), INTERVAL v_weeks WEEK);
+  RETURN v_result;
 END//
 DELIMITER ;
 
 
--- 5.2 Check if member is active
+-- 5.2 Check if member is active (returns 0 if no membership or expired)
 DELIMITER //
 CREATE FUNCTION fn_is_member_active(p_member INT)
 RETURNS TINYINT(1)
@@ -147,6 +291,11 @@ READS SQL DATA
 BEGIN
   DECLARE v_end DATE;
   SET v_end = fn_membership_end_date(p_member);
+  
+  IF v_end IS NULL THEN
+    RETURN 0;  -- No payment record means inactive
+  END IF;
+  
   RETURN (v_end >= CURDATE());
 END//
 DELIMITER ;

@@ -1,32 +1,41 @@
+-- ACID Compliance: All tables use InnoDB engine for ACID transactions
+-- Foreign keys enforce referential integrity (Consistency)
+-- Constraints and triggers validate data integrity (Consistency)
+-- Procedures use transactions for atomicity (see REVIEW-3.sql)
+
 CREATE DATABASE IF NOT EXISTS GymMemberShip_WorkOutTracker
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE GymMemberShip_WorkOutTracker;
 
+-- Core master: Packages available for subscription
 CREATE TABLE Package (
-  PackageId INT PRIMARY KEY,
+  PackageId INT PRIMARY KEY AUTO_INCREMENT,
   PackageName VARCHAR(100) NOT NULL,
   Price DECIMAL(8,2) NOT NULL,
   DurationWeeks INT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Staff table
 CREATE TABLE Trainer (
-  TrainerId INT PRIMARY KEY,
+  TrainerId INT PRIMARY KEY AUTO_INCREMENT,
   TrainerName VARCHAR(100) NOT NULL,
   DoB DATE,
   PhoneNo VARCHAR(20),
   Email VARCHAR(150)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Inventory table
 CREATE TABLE Equipment (
-  EquipmentId INT PRIMARY KEY,
+  EquipmentId INT PRIMARY KEY AUTO_INCREMENT,
   Name VARCHAR(100) NOT NULL,
   Quantity INT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Exercise library (equipment is optional for bodyweight movements)
 CREATE TABLE Exercise (
-  ExerciseId INT PRIMARY KEY,
+  ExerciseId INT PRIMARY KEY AUTO_INCREMENT,
   ExerciseName VARCHAR(100) NOT NULL,
   MuscleGroup VARCHAR(100),
   DefaultSets INT,
@@ -34,11 +43,12 @@ CREATE TABLE Exercise (
   EquipmentId INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Member master
 CREATE TABLE Member (
-  MemberId INT PRIMARY KEY,
+  MemberId INT PRIMARY KEY AUTO_INCREMENT,
   Name VARCHAR(150) NOT NULL,
-  Email VARCHAR(150),
-  PhoneNo VARCHAR(20),
+  Email VARCHAR(150),        -- unique constraint added later
+  PhoneNo VARCHAR(20),       -- unique constraint added later
   Address TEXT,
   DoB DATE,
   JoinDate DATE,
@@ -47,21 +57,24 @@ CREATE TABLE Member (
   TrainerId INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Program plans created by trainers
 CREATE TABLE WorkOutPlan (
-  PlanId INT PRIMARY KEY,
+  PlanId INT PRIMARY KEY AUTO_INCREMENT,
   DurationWeeks INT,
   Goal VARCHAR(255),
   TrainerId INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Junction table mapping members to plans
 CREATE TABLE Member_WorkOutPlan (
   MemberId INT,
   PlanId INT,
   PRIMARY KEY (MemberId, PlanId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Daily workout log
 CREATE TABLE WorkOutTracker (
-  TrackerId INT PRIMARY KEY,
+  TrackerId INT PRIMARY KEY AUTO_INCREMENT,
   DateLogged DATE,
   Status VARCHAR(50),
   Day VARCHAR(20),
@@ -73,16 +86,18 @@ CREATE TABLE WorkOutTracker (
   ExerciseId INT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Daily attendance
 CREATE TABLE Attendance (
-  AttendanceId INT PRIMARY KEY,
+  AttendanceId INT PRIMARY KEY AUTO_INCREMENT,
   MemberId INT,
   Date DATE,
   CheckInTime TIME,
   CheckOutTime TIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Payments made for packages (audited via triggers)
 CREATE TABLE Payment (
-  PaymentId INT PRIMARY KEY,
+  PaymentId INT PRIMARY KEY AUTO_INCREMENT,
   Amount DECIMAL(8,2),
   Mode VARCHAR(50),
   TimeStamp DATETIME,
@@ -91,34 +106,77 @@ CREATE TABLE Payment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+-- Foreign keys with explicit actions for integrity
 ALTER TABLE Exercise
   ADD CONSTRAINT fk_exercise_equipment
-  FOREIGN KEY (EquipmentId) REFERENCES Equipment(EquipmentId);
+  FOREIGN KEY (EquipmentId) REFERENCES Equipment(EquipmentId)
+  ON UPDATE CASCADE ON DELETE SET NULL;  -- allow bodyweight exercises
 
 ALTER TABLE Member
-  ADD CONSTRAINT fk_member_package FOREIGN KEY (PackageId) REFERENCES Package(PackageId),
-  ADD CONSTRAINT fk_member_trainer FOREIGN KEY (TrainerId) REFERENCES Trainer(TrainerId);
+  ADD CONSTRAINT fk_member_package
+    FOREIGN KEY (PackageId) REFERENCES Package(PackageId)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_member_trainer
+    FOREIGN KEY (TrainerId) REFERENCES Trainer(TrainerId)
+    ON UPDATE CASCADE ON DELETE SET NULL;
 
 ALTER TABLE WorkOutPlan
-  ADD CONSTRAINT fk_plan_trainer FOREIGN KEY (TrainerId) REFERENCES Trainer(TrainerId);
+  ADD CONSTRAINT fk_plan_trainer
+    FOREIGN KEY (TrainerId) REFERENCES Trainer(TrainerId)
+    ON UPDATE CASCADE ON DELETE SET NULL;
 
 ALTER TABLE Member_WorkOutPlan
-  ADD CONSTRAINT fk_mw_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId),
-  ADD CONSTRAINT fk_mw_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId);
+  ADD CONSTRAINT fk_mw_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  ADD CONSTRAINT fk_mw_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId)
+    ON UPDATE CASCADE ON DELETE CASCADE;
 
 ALTER TABLE WorkOutTracker
-  ADD CONSTRAINT fk_tracker_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId),
-  ADD CONSTRAINT fk_tracker_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId),
-  ADD CONSTRAINT fk_tracker_exercise FOREIGN KEY (ExerciseId) REFERENCES Exercise(ExerciseId);
+  ADD CONSTRAINT fk_tracker_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  ADD CONSTRAINT fk_tracker_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId)
+    ON UPDATE CASCADE ON DELETE CASCADE,
+  ADD CONSTRAINT fk_tracker_exercise FOREIGN KEY (ExerciseId) REFERENCES Exercise(ExerciseId)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
 
 ALTER TABLE Attendance
-  ADD CONSTRAINT fk_att_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId);
+  ADD CONSTRAINT fk_att_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
 
 ALTER TABLE Payment
-  ADD CONSTRAINT fk_payment_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId),
-  ADD CONSTRAINT fk_payment_package FOREIGN KEY (PackageId) REFERENCES Package(PackageId);
+  ADD CONSTRAINT fk_payment_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  ADD CONSTRAINT fk_payment_package FOREIGN KEY (PackageId) REFERENCES Package(PackageId)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+-- Data quality: unique keys, checks, business rules
+-- Unique contacts
+ALTER TABLE Member  ADD CONSTRAINT uq_member_email  UNIQUE (Email);
+ALTER TABLE Member  ADD CONSTRAINT uq_member_phone  UNIQUE (PhoneNo);
+ALTER TABLE Trainer ADD CONSTRAINT uq_trainer_email UNIQUE (Email);
+ALTER TABLE Trainer ADD CONSTRAINT uq_trainer_phone UNIQUE (PhoneNo);
+
+-- Attendance: one record per member per date
+ALTER TABLE Attendance ADD CONSTRAINT uq_att_member_date UNIQUE (MemberId, Date);
+
+-- Positivity checks
+ALTER TABLE Package   ADD CONSTRAINT chk_pkg_price  CHECK (Price > 0);
+ALTER TABLE Package   ADD CONSTRAINT chk_pkg_weeks  CHECK (DurationWeeks > 0);
+ALTER TABLE Equipment ADD CONSTRAINT chk_equip_qty  CHECK (Quantity >= 0);
+ALTER TABLE WorkOutTracker ADD CONSTRAINT chk_sets_nonneg CHECK (SetsComplete >= 0);
+
+-- Helpful indexes for joins/lookups
+CREATE INDEX ix_member_package   ON Member(PackageId);
+CREATE INDEX ix_member_trainer   ON Member(TrainerId);
+CREATE INDEX ix_tracker_member   ON WorkOutTracker(MemberId);
+CREATE INDEX ix_tracker_plan     ON WorkOutTracker(PlanId);
+CREATE INDEX ix_payment_member   ON Payment(MemberId);
+CREATE INDEX ix_payment_package  ON Payment(PackageId);
+CREATE INDEX ix_exercise_equipment ON Exercise(EquipmentId);
+CREATE INDEX ix_att_member       ON Attendance(MemberId);
 
 
+-- Seed data: explicit IDs work with AUTO_INCREMENT (MySQL auto-adjusts counter)
 -- Packages
 INSERT INTO Package VALUES
 (1, 'Starter', 499.00, 4),
