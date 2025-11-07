@@ -1,47 +1,52 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Members</h3>
-  <a href="/members/create" class="btn btn-primary">+ Add Member</a>
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3 class="mb-0">Members</h3>
+    <a href="/members/create" class="btn btn-primary btn-sm">+ Add Member</a>
+  </div>
+  <div class="card-body">
+    {% if rows %}
+    <div class="table-responsive">
+      <table class="table table-striped table-hover table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Package</th>
+            <th>Trainer</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in rows %}
+          <tr>
+            <td><strong>{{ m.MemberId }}</strong></td>
+            <td>{{ m.Name }}</td>
+            <td>{{ m.Email or '-' }}</td>
+            <td>{{ m.PhoneNo or '-' }}</td>
+            <td>{{ m.PackageId or '-' }}</td>
+            <td>{{ m.TrainerId or '-' }}</td>
+            <td>
+              <div class="btn-group btn-group-sm" role="group">
+                <a href="/members/{{ m.MemberId }}/edit" class="btn btn-warning">Edit</a>
+                <form method="post" action="/members/{{ m.MemberId }}/delete" style="display:inline" onsubmit="return confirm('Delete member? This action cannot be undone.');">
+                  <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info mb-0">No members found. <a href="/members/create" class="alert-link">Add a member</a> to get started.</div>
+    {% endif %}
+  </div>
 </div>
-
-{% if rows %}
-<div class="table-responsive">
-  <table class="table table-striped table-hover">
-    <thead class="table-dark">
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Phone</th>
-        <th>Package</th>
-        <th>Trainer</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for m in rows %}
-      <tr>
-        <td>{{ m.MemberId }}</td>
-        <td>{{ m.Name }}</td>
-        <td>{{ m.Email }}</td>
-        <td>{{ m.PhoneNo }}</td>
-        <td>{{ m.PackageId }}</td>
-        <td>{{ m.TrainerId }}</td>
-        <td>
-          <a href="/members/{{ m.MemberId }}/edit" class="btn btn-sm btn-warning">Edit</a>
-          <form method="post" action="/members/{{ m.MemberId }}/delete" style="display:inline" onsubmit="return confirm('Delete member? This action cannot be undone.');">
-            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% else %}
-<div class="alert alert-info">No members found.</div>
-{% endif %}
 {% endblock %}
 
 

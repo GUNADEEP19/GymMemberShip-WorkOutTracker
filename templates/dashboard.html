@@ -8,73 +8,73 @@
     {% if user_name %}<p class="lead">Welcome, {{ user_name }}.</p>{% endif %}
 
     {% if role == 'admin' %}
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <div class="card">
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">Manage Members</h5>
-              <p class="card-text">Create, edit, and delete member records.</p>
-              <a href="/members" class="btn btn-primary">Go to Members</a>
+              <h5 class="card-title text-primary">👥 Manage Members</h5>
+              <p class="card-text text-muted">Create, edit, and delete member records.</p>
+              <a href="/members" class="btn btn-primary w-100">Go to Members</a>
             </div>
           </div>
         </div>
-        <div class="col-md-6 mb-3">
-          <div class="card">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">Enroll Members</h5>
-              <p class="card-text">Assign workout plans to members.</p>
-              <a href="/actions/enroll" class="btn btn-primary">Enroll</a>
+              <h5 class="card-title text-success">📋 Enroll Members</h5>
+              <p class="card-text text-muted">Assign workout plans to members.</p>
+              <a href="/actions/enroll" class="btn btn-success w-100">Enroll</a>
             </div>
           </div>
         </div>
-        <div class="col-md-6 mb-3">
-          <div class="card">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">Record Payments</h5>
-              <p class="card-text">Process member payments.</p>
-              <a href="/actions/make_payment" class="btn btn-primary">Payments</a>
+              <h5 class="card-title text-info">💳 Record Payments</h5>
+              <p class="card-text text-muted">Process member payments.</p>
+              <a href="/actions/make_payment" class="btn btn-info text-white w-100">Payments</a>
             </div>
           </div>
         </div>
-        <div class="col-md-6 mb-3">
-          <div class="card">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">Database Users</h5>
-              <p class="card-text">Manage MySQL users and privileges.</p>
-              <a href="/db-users" class="btn btn-primary">DB Users</a>
+              <h5 class="card-title text-warning">👤 Database Users</h5>
+              <p class="card-text text-muted">Manage MySQL users and privileges.</p>
+              <a href="/db-users" class="btn btn-warning w-100">DB Users</a>
             </div>
           </div>
         </div>
-        <div class="col-md-6 mb-3">
-          <div class="card">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
             <div class="card-body">
-              <h5 class="card-title">MySQL Console</h5>
-              <p class="card-text">Execute SQL queries directly.</p>
-              <a href="/mysql-console" class="btn btn-primary">Console</a>
+              <h5 class="card-title text-dark">⚡ MySQL Console</h5>
+              <p class="card-text text-muted">Execute SQL queries directly.</p>
+              <a href="/mysql-console" class="btn btn-dark w-100">Console</a>
             </div>
           </div>
         </div>
       </div>
     {% elif role == 'member' %}
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Make Payment</h5>
-              <p class="card-text">Pay for your membership package.</p>
-              <a href="/actions/make_payment" class="btn btn-primary">Pay Now</a>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-info">💳 Make Payment</h5>
+              <p class="card-text text-muted">Pay for your membership package.</p>
+              <a href="/actions/make_payment" class="btn btn-info text-white btn-lg w-100">Pay Now</a>
             </div>
           </div>
         </div>
       </div>
     {% elif role == 'trainer' %}
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <div class="card">
-            <div class="card-body">
-              <h5 class="card-title">Enroll Member</h5>
-              <p class="card-text">Assign workout plans to members.</p>
-              <a href="/actions/enroll" class="btn btn-primary">Enroll</a>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-success">📋 Enroll Member</h5>
+              <p class="card-text text-muted">Assign workout plans to members.</p>
+              <a href="/actions/enroll" class="btn btn-success btn-lg w-100">Enroll</a>
             </div>
           </div>
         </div>

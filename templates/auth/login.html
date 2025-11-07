@@ -1,35 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Login</h3>
+  <div class="col-md-5 col-lg-4">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h3 class="card-title mb-0 text-center">Login</h3>
       </div>
-      <div class="card-body">
-        <p>Enter your email and password to access the system.</p>
+      <div class="card-body p-4">
+        <p class="text-muted text-center">Enter your email and password to access the system.</p>
         <form method="post">
           <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input name="email" type="email" class="form-control" id="email" required placeholder="your@email.com">
+            <label for="email" class="form-label fw-bold">Email</label>
+            <input name="email" type="email" class="form-control form-control-lg" id="email" required placeholder="your@email.com" autofocus>
           </div>
           <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input name="password" type="password" class="form-control" id="password" required placeholder="Enter password">
+            <label for="password" class="form-label fw-bold">Password</label>
+            <input name="password" type="password" class="form-control form-control-lg" id="password" required placeholder="Enter password">
           </div>
-          <button type="submit" class="btn btn-success w-100">Login</button>
+          <button type="submit" class="btn btn-success w-100 btn-lg mt-3">Login</button>
         </form>
         
         <div class="accordion mt-4" id="credentialsAccordion">
           <div class="accordion-item">
             <h2 class="accordion-header">
-              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#credentials">
-                Default Credentials
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#credentials" aria-expanded="false">
+                <small>Default Credentials</small>
               </button>
             </h2>
             <div id="credentials" class="accordion-collapse collapse" data-bs-parent="#credentialsAccordion">
               <div class="accordion-body">
-                <ul>
+                <ul class="mb-0 small">
                   <li><strong>Admin:</strong> admin@gym.com / admin123</li>
                   <li><strong>Member:</strong> amit.sharma@example.com / member123</li>
                   <li><strong>Trainer:</strong> rajesh@example.com / trainer123</li>
