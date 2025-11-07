@@ -301,50 +301,6 @@ def action_make_payment():
     return render_template('actions/make_payment.html', members=members, packages=packages, audits=audits)
 
 
-# ---------- Queries (Nested / Join / Aggregate) ----------
-@app.route('/queries')
-@role_required('admin', 'member', 'trainer')
-def queries_home():
-    try:
-        nested = execute_query(
-            """
-            SELECT m.MemberId, m.Name
-            FROM Member m
-            WHERE m.MemberId IN (
-              SELECT DISTINCT MemberId FROM WorkOutTracker WHERE Status='Completed'
-            ) ORDER BY m.Name
-            """,
-            silent=True
-        )
-        joinq = execute_query(
-            """
-            SELECT m.Name AS MemberName, p.PackageName, pay.Amount, pay.TimeStamp
-            FROM Payment pay
-            JOIN Member m  ON m.MemberId = pay.MemberId
-            JOIN Package p ON p.PackageId = pay.PackageId
-            ORDER BY pay.TimeStamp DESC
-            """,
-            silent=True
-        )
-        aggregate = execute_query(
-            """
-            SELECT m.MemberId, m.Name, COUNT(*) AS CompletedWorkouts
-            FROM WorkOutTracker w
-            JOIN Member m ON m.MemberId = w.MemberId
-            WHERE w.Status='Completed'
-            GROUP BY m.MemberId, m.Name
-            ORDER BY CompletedWorkouts DESC
-            """,
-            silent=True
-        )
-    except Exception as e:
-        flash(f'Error loading queries: {str(e)}', 'warning')
-        nested = []
-        joinq = []
-        aggregate = []
-    return render_template('queries/index.html', nested=nested, joinq=joinq, aggregate=aggregate)
-
-
 # ---------- MySQL Console (Admin only) ----------
 @app.route('/mysql-console', methods=['GET', 'POST'])
 @role_required('admin')

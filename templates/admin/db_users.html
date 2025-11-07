@@ -1,19 +1,39 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Database Users & Privileges</h3>
-<form method="post">
-  <label>Username<input name="username" required></label>
-  <label>Password<input name="password" type="password" required></label>
-  <label>Host<input name="host" value="%"></label>
-  <label>Role
-    <select name="db_role" required>
-      <option value="admin">Admin (ALL PRIVILEGES)</option>
-      <option value="app_user">App User (CRUD + EXECUTE)</option>
-      <option value="trainer_user">Trainer (SELECT + EXECUTE)</option>
-    </select>
-  </label>
-  <button type="submit">Create/Update</button>
-</form>
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3>Database Users & Privileges</h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Username *</label>
+            <input name="username" class="form-control" required placeholder="username">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password *</label>
+            <input name="password" type="password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Host</label>
+            <input name="host" class="form-control" value="%">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role *</label>
+            <select name="db_role" class="form-select" required>
+              <option value="admin">Admin (ALL PRIVILEGES)</option>
+              <option value="app_user">App User (CRUD + EXECUTE)</option>
+              <option value="trainer_user">Trainer (SELECT + EXECUTE)</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Create/Update</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 

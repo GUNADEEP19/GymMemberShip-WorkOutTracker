@@ -1,36 +1,87 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Queries</h3>
+<h3 class="mb-4">Queries Dashboard</h3>
 
-<h4>Nested Query — Members with at least one Completed workout</h4>
-<table>
-  <thead><tr><th>MemberId</th><th>Name</th></tr></thead>
-  <tbody>
-    {% for r in nested %}
-    <tr><td>{{ r.MemberId }}</td><td>{{ r.Name }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card mb-4">
+  <div class="card-header bg-primary text-white">
+    <h4 class="mb-0">Nested Query — Members with at least one Completed workout</h4>
+  </div>
+  <div class="card-body">
+    {% if nested %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr><th>MemberId</th><th>Name</th></tr>
+        </thead>
+        <tbody>
+          {% for r in nested %}
+          <tr><td>{{ r.MemberId }}</td><td>{{ r.Name }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No results found.</p>
+    {% endif %}
+  </div>
+</div>
 
-<h4>Join Query — Payments with Member and Package</h4>
-<table>
-  <thead><tr><th>Member</th><th>Package</th><th>Amount</th><th>Time</th></tr></thead>
-  <tbody>
-    {% for r in joinq %}
-    <tr><td>{{ r.MemberName }}</td><td>{{ r.PackageName }}</td><td>{{ r.Amount }}</td><td>{{ r.TimeStamp }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card mb-4">
+  <div class="card-header bg-success text-white">
+    <h4 class="mb-0">Join Query — Payments with Member and Package</h4>
+  </div>
+  <div class="card-body">
+    {% if joinq %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr><th>Member</th><th>Package</th><th>Amount</th><th>Time</th></tr>
+        </thead>
+        <tbody>
+          {% for r in joinq %}
+          <tr>
+            <td>{{ r.MemberName }}</td>
+            <td>{{ r.PackageName }}</td>
+            <td>₹{{ r.Amount }}</td>
+            <td>{{ r.TimeStamp }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No results found.</p>
+    {% endif %}
+  </div>
+</div>
 
-<h4>Aggregate Query — Completed workouts per member</h4>
-<table>
-  <thead><tr><th>MemberId</th><th>Name</th><th>CompletedWorkouts</th></tr></thead>
-  <tbody>
-    {% for r in aggregate %}
-    <tr><td>{{ r.MemberId }}</td><td>{{ r.Name }}</td><td>{{ r.CompletedWorkouts }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="card mb-4">
+  <div class="card-header bg-info text-white">
+    <h4 class="mb-0">Aggregate Query — Completed workouts per member</h4>
+  </div>
+  <div class="card-body">
+    {% if aggregate %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr><th>MemberId</th><th>Name</th><th>Completed Workouts</th></tr>
+        </thead>
+        <tbody>
+          {% for r in aggregate %}
+          <tr>
+            <td>{{ r.MemberId }}</td>
+            <td>{{ r.Name }}</td>
+            <td><span class="badge bg-success">{{ r.CompletedWorkouts }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted">No results found.</p>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
 
 

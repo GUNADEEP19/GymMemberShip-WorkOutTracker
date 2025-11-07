@@ -1,26 +1,45 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Login</h3>
-<p>Enter your email and password to access the system.</p>
-
-<form method="post">
-  <label>
-    Email
-    <input name="email" type="email" required placeholder="your@email.com">
-  </label>
-  <label>
-    Password
-    <input name="password" type="password" required placeholder="Enter password">
-  </label>
-  <button type="submit">Login</button>
-</form>
-
-<details>
-  <summary>Default Credentials</summary>
-  <ul>
-    <li><strong>Admin:</strong> admin@gym.com / admin123</li>
-    <li><strong>Member:</strong> amit.sharma@example.com / member123</li>
-    <li><strong>Trainer:</strong> rajesh@example.com / trainer123</li>
-  </ul>
-</details>
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Login</h3>
+      </div>
+      <div class="card-body">
+        <p>Enter your email and password to access the system.</p>
+        <form method="post">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" id="email" required placeholder="your@email.com">
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input name="password" type="password" class="form-control" id="password" required placeholder="Enter password">
+          </div>
+          <button type="submit" class="btn btn-success w-100">Login</button>
+        </form>
+        
+        <div class="accordion mt-4" id="credentialsAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#credentials">
+                Default Credentials
+              </button>
+            </h2>
+            <div id="credentials" class="accordion-collapse collapse" data-bs-parent="#credentialsAccordion">
+              <div class="accordion-body">
+                <ul>
+                  <li><strong>Admin:</strong> admin@gym.com / admin123</li>
+                  <li><strong>Member:</strong> amit.sharma@example.com / member123</li>
+                  <li><strong>Trainer:</strong> rajesh@example.com / trainer123</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -1,56 +1,78 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>MySQL Console</h3>
-<p>Execute SQL queries directly on the database.</p>
-
-<form method="post">
-  <label>
-    SQL Query
-    <textarea name="sql_query" rows="8" placeholder="SELECT * FROM Member LIMIT 10;" required>{{ query_executed or '' }}</textarea>
-  </label>
-  <button type="submit">Execute</button>
-</form>
+<div class="row">
+  <div class="col-md-12 mb-4">
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h3>MySQL Console</h3>
+      </div>
+      <div class="card-body">
+        <p>Execute SQL queries directly on the database.</p>
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">SQL Query</label>
+            <textarea name="sql_query" class="form-control font-monospace" rows="8" placeholder="SELECT * FROM Member LIMIT 10;" required>{{ query_executed or '' }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Execute</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% if error %}
-  <article class="contrast">
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
     <strong>Error:</strong> {{ error }}
-  </article>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
 {% endif %}
 
 {% if results %}
-  <h4>Results ({{ results|length }} row{{ 's' if results|length != 1 else '' }})</h4>
-  {% if results and results[0] is mapping %}
-    <table>
-      <thead>
-        <tr>
-          {% for key in results[0].keys() %}
-            <th>{{ key }}</th>
-          {% endfor %}
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in results %}
-          <tr>
-            {% for value in row.values() %}
-              <td>{{ value if value is not none else 'NULL' }}</td>
-            {% endfor %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>{{ results }}</p>
-  {% endif %}
+  <div class="card">
+    <div class="card-header bg-success text-white">
+      <h4>Results ({{ results|length }} row{{ 's' if results|length != 1 else '' }})</h4>
+    </div>
+    <div class="card-body">
+      {% if results and results[0] is mapping %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                {% for key in results[0].keys() %}
+                  <th>{{ key }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in results %}
+                <tr>
+                  {% for value in row.values() %}
+                    <td>{{ value if value is not none else '<span class="text-muted">NULL</span>'|safe }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>{{ results }}</p>
+      {% endif %}
+    </div>
+  </div>
 {% endif %}
 
-<details>
-  <summary>Quick Examples</summary>
-  <ul>
-    <li><code>SELECT * FROM Member LIMIT 10;</code></li>
-    <li><code>SELECT COUNT(*) FROM Trainer;</code></li>
-    <li><code>SHOW TABLES;</code></li>
-    <li><code>DESC Member;</code></li>
-  </ul>
-</details>
+<div class="card mt-4">
+  <div class="card-header">
+    <h5>Quick Examples</h5>
+  </div>
+  <div class="card-body">
+    <ul class="list-unstyled">
+      <li><code>SELECT * FROM Member LIMIT 10;</code></li>
+      <li><code>SELECT COUNT(*) FROM Trainer;</code></li>
+      <li><code>SHOW TABLES;</code></li>
+      <li><code>DESC Member;</code></li>
+    </ul>
+  </div>
+</div>
 {% endblock %}
 

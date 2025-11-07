@@ -1,32 +1,47 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Members</h3>
-<p><a role="button" href="/members/create">+ Add Member</a></p>
-<table>
-  <thead>
-    <tr>
-      <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Package</th><th>Trainer</th><th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for m in rows %}
-    <tr>
-      <td>{{ m.MemberId }}</td>
-      <td>{{ m.Name }}</td>
-      <td>{{ m.Email }}</td>
-      <td>{{ m.PhoneNo }}</td>
-      <td>{{ m.PackageId }}</td>
-      <td>{{ m.TrainerId }}</td>
-      <td>
-        <a href="/members/{{ m.MemberId }}/edit">Edit</a>
-        <form method="post" action="/members/{{ m.MemberId }}/delete" style="display:inline" onsubmit="return confirm('Delete member?');">
-          <button type="submit">Delete</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
- </table>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Members</h3>
+  <a href="/members/create" class="btn btn-primary">+ Add Member</a>
+</div>
+
+{% if rows %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Package</th>
+        <th>Trainer</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in rows %}
+      <tr>
+        <td>{{ m.MemberId }}</td>
+        <td>{{ m.Name }}</td>
+        <td>{{ m.Email }}</td>
+        <td>{{ m.PhoneNo }}</td>
+        <td>{{ m.PackageId }}</td>
+        <td>{{ m.TrainerId }}</td>
+        <td>
+          <a href="/members/{{ m.MemberId }}/edit" class="btn btn-sm btn-warning">Edit</a>
+          <form method="post" action="/members/{{ m.MemberId }}/delete" style="display:inline" onsubmit="return confirm('Delete member? This action cannot be undone.');">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-info">No members found.</div>
+{% endif %}
 {% endblock %}
 
 

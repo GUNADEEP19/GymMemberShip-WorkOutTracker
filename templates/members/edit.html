@@ -1,40 +1,81 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Edit Member #{{ m.MemberId }}</h3>
-<form method="post">
-  <label>Name<input name="Name" value="{{ m.Name }}" required></label>
-  <label>Email<input name="Email" type="email" value="{{ m.Email }}"></label>
-  <label>Phone<input name="PhoneNo" value="{{ m.PhoneNo }}"></label>
-  <label>Address<input name="Address" value="{{ m.Address }}"></label>
-  <label>DoB<input name="DoB" type="date" value="{{ m.DoB }}"></label>
-  <label>JoinDate<input name="JoinDate" type="date" value="{{ m.JoinDate }}"></label>
-  <label>Gender
-    <select name="Gender">
-      <option value="">--</option>
-      <option value="M" {{ 'selected' if m.Gender=='M' else '' }}>M</option>
-      <option value="F" {{ 'selected' if m.Gender=='F' else '' }}>F</option>
-      <option value="Other" {{ 'selected' if m.Gender=='Other' else '' }}>Other</option>
-    </select>
-  </label>
-  <label>Package
-    <select name="PackageId">
-      <option value="">--</option>
-      {% for p in packages %}
-        <option value="{{ p.PackageId }}" {{ 'selected' if m.PackageId==p.PackageId else '' }}>{{ p.PackageName }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>Trainer
-    <select name="TrainerId">
-      <option value="">--</option>
-      {% for t in trainers %}
-        <option value="{{ t.TrainerId }}" {{ 'selected' if m.TrainerId==t.TrainerId else '' }}>{{ t.TrainerName }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <button type="submit">Save</button>
-  <a role="button" href="/members" class="secondary">Cancel</a>
-</form>
+<div class="row">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3>Edit Member #{{ m.MemberId }}</h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Name *</label>
+              <input name="Name" class="form-control" value="{{ m.Name }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              <input name="Email" type="email" class="form-control" value="{{ m.Email }}">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phone</label>
+              <input name="PhoneNo" class="form-control" value="{{ m.PhoneNo }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date of Birth</label>
+              <input name="DoB" type="date" class="form-control" value="{{ m.DoB }}">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            <input name="Address" class="form-control" value="{{ m.Address }}">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Join Date</label>
+              <input name="JoinDate" type="date" class="form-control" value="{{ m.JoinDate }}">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Gender</label>
+              <select name="Gender" class="form-select">
+                <option value="">--</option>
+                <option value="M" {{ 'selected' if m.Gender=='M' else '' }}>M</option>
+                <option value="F" {{ 'selected' if m.Gender=='F' else '' }}>F</option>
+                <option value="Other" {{ 'selected' if m.Gender=='Other' else '' }}>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Package</label>
+              <select name="PackageId" class="form-select">
+                <option value="">--</option>
+                {% for p in packages %}
+                  <option value="{{ p.PackageId }}" {{ 'selected' if m.PackageId==p.PackageId else '' }}>{{ p.PackageName }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Trainer</label>
+              <select name="TrainerId" class="form-select">
+                <option value="">--</option>
+                {% for t in trainers %}
+                  <option value="{{ t.TrainerId }}" {{ 'selected' if m.TrainerId==t.TrainerId else '' }}>{{ t.TrainerName }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="/members" class="btn btn-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 

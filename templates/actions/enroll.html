@@ -1,23 +1,35 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Enroll Member to Plan</h3>
-<form method="post">
-  <label>Member
-    <select name="member_id" required>
-      {% for m in members %}
-      <option value="{{ m.MemberId }}">{{ m.Name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>Plan
-    <select name="plan_id" required>
-      {% for p in plans %}
-      <option value="{{ p.PlanId }}">{{ p.Goal }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <button type="submit">Enroll</button>
-</form>
+<div class="row">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3>Enroll Member to Plan</h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-3">
+            <label class="form-label">Member *</label>
+            <select name="member_id" class="form-select" required>
+              {% for m in members %}
+              <option value="{{ m.MemberId }}">{{ m.Name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Plan *</label>
+            <select name="plan_id" class="form-select" required>
+              {% for p in plans %}
+              <option value="{{ p.PlanId }}">{{ p.Goal }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Enroll</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 
