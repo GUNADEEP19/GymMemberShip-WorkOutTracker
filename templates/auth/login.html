@@ -1,45 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
 <h3>Login</h3>
+<p>Enter your email and password to access the system.</p>
 
-<details open>
-  <summary>Admin</summary>
-  <form method="post">
-    <input type="hidden" name="type" value="admin" />
-    <label>Password <input name="password" type="password" required></label>
-    <button type="submit">Login as Admin</button>
-  </form>
-</details>
-
-<details>
-  <summary>Member</summary>
-  <form method="post">
-    <input type="hidden" name="type" value="member" />
-    <label>Member
-      <select name="member_id" required>
-        {% for m in members %}
-          <option value="{{ m.MemberId }}">{{ m.Name }} ({{ m.MemberId }})</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Login as Member</button>
-  </form>
-</details>
+<form method="post">
+  <label>
+    Email
+    <input name="email" type="email" required placeholder="your@email.com">
+  </label>
+  <label>
+    Password
+    <input name="password" type="password" required placeholder="Enter password">
+  </label>
+  <button type="submit">Login</button>
+</form>
 
 <details>
-  <summary>Trainer</summary>
-  <form method="post">
-    <input type="hidden" name="type" value="trainer" />
-    <label>Trainer
-      <select name="trainer_id" required>
-        {% for t in trainers %}
-          <option value="{{ t.TrainerId }}">{{ t.TrainerName }} ({{ t.TrainerId }})</option>
-        {% endfor %}
-      </select>
-    </label>
-    <button type="submit">Login as Trainer</button>
-  </form>
+  <summary>Default Credentials</summary>
+  <ul>
+    <li><strong>Admin:</strong> admin@gym.com / admin123</li>
+    <li><strong>Member:</strong> amit.sharma@example.com / member123</li>
+    <li><strong>Trainer:</strong> rajesh@example.com / trainer123</li>
+  </ul>
 </details>
 {% endblock %}
-
-

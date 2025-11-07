@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>MySQL Console</h3>
+<p>Execute SQL queries directly on the database.</p>
+
+<form method="post">
+  <label>
+    SQL Query
+    <textarea name="sql_query" rows="8" placeholder="SELECT * FROM Member LIMIT 10;" required>{{ query_executed or '' }}</textarea>
+  </label>
+  <button type="submit">Execute</button>
+</form>
+
+{% if error %}
+  <article class="contrast">
+    <strong>Error:</strong> {{ error }}
+  </article>
+{% endif %}
+
+{% if results %}
+  <h4>Results ({{ results|length }} row{{ 's' if results|length != 1 else '' }})</h4>
+  {% if results and results[0] is mapping %}
+    <table>
+      <thead>
+        <tr>
+          {% for key in results[0].keys() %}
+            <th>{{ key }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in results %}
+          <tr>
+            {% for value in row.values() %}
+              <td>{{ value if value is not none else 'NULL' }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>{{ results }}</p>
+  {% endif %}
+{% endif %}
+
+<details>
+  <summary>Quick Examples</summary>
+  <ul>
+    <li><code>SELECT * FROM Member LIMIT 10;</code></li>
+    <li><code>SELECT COUNT(*) FROM Trainer;</code></li>
+    <li><code>SHOW TABLES;</code></li>
+    <li><code>DESC Member;</code></li>
+  </ul>
+</details>
+{% endblock %}
+

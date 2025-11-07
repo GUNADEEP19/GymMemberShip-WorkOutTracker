@@ -12,14 +12,26 @@
         <li><strong>Gym DBMS</strong></li>
       </ul>
       <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/queries">Queries</a></li>
-        <li><a href="/actions/make_payment">Payments</a></li>
-        <li><a href="/actions/enroll">Enroll</a></li>
-        <li><a href="/members">Members</a></li>
-        <li><a href="/db-users">DB Users</a></li>
-        <li><a href="/login">Login</a></li>
-        <li><a href="/logout">Logout</a></li>
+        {% if session.role %}
+          <li><a href="/dashboard">Dashboard</a></li>
+          {% if session.role == 'member' or session.role == 'trainer' %}
+            <li><a href="/queries">Queries</a></li>
+          {% endif %}
+          {% if session.role == 'admin' or session.role == 'member' %}
+            <li><a href="/actions/make_payment">Payments</a></li>
+          {% endif %}
+          {% if session.role == 'admin' or session.role == 'trainer' %}
+            <li><a href="/actions/enroll">Enroll</a></li>
+          {% endif %}
+          {% if session.role == 'admin' %}
+            <li><a href="/members">Members</a></li>
+            <li><a href="/db-users">DB Users</a></li>
+            <li><a href="/mysql-console">MySQL Console</a></li>
+          {% endif %}
+          <li><a href="/logout">Logout ({{ session.user_name or session.role }})</a></li>
+        {% else %}
+          <li><a href="/login">Login</a></li>
+        {% endif %}
       </ul>
     </nav>
 

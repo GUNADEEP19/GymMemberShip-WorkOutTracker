@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Dashboard ({{ role|capitalize }})</h3>
+{% if user_name %}<p>Welcome, {{ user_name }}.</p>{% endif %}
+
+{% if role == 'admin' %}
+  <ul>
+    <li><a href="/members">Manage Members</a></li>
+    <li><a href="/actions/enroll">Enroll Members to Plans</a></li>
+    <li><a href="/actions/make_payment">Record Payments</a></li>
+    <li><a href="/queries">Run Queries (Nested/Join/Aggregate)</a></li>
+    <li><a href="/db-users">Database Users & Privileges</a></li>
+  </ul>
+{% elif role == 'member' %}
+  <ul>
+    <li><a href="/actions/make_payment">Make a Payment</a></li>
+    <li><a href="/queries">View Queries & Insights</a></li>
+  </ul>
+{% elif role == 'trainer' %}
+  <ul>
+    <li><a href="/actions/enroll">Enroll Member to Plan</a></li>
+    <li><a href="/queries">View Queries & Insights</a></li>
+  </ul>
+{% endif %}
+{% endblock %}
+
+
