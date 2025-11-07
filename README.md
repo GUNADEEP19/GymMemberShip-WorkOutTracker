@@ -237,4 +237,5 @@ This project is for educational purposes (DBMS Mini-Project).
 ## Author
 
 CHENNUPATI GUNADEEP (PES1UG23CS160)
+
 C S DEEPAK (PES1UG23CS907)
