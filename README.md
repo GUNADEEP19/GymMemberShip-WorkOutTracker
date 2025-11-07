@@ -118,7 +118,7 @@ You should see:
 ```
 DB_HOST: localhost
 DB_USER: root
-DB_PASSWORD: ******** (length: 8)
+DB_PASSWORD: ******** (Make Sure Length of the your Password Matches)
 DB_NAME: GymMemberShip_WorkOutTracker
  * Running on http://0.0.0.0:3000
 ```
