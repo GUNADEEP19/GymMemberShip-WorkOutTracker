@@ -20,17 +20,24 @@
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">
+              <label class="form-label">Password</label>
+              <input name="Password" type="password" class="form-control" placeholder="Leave blank to keep current">
+              <small class="text-muted">Leave blank to keep current password</small>
+            </div>
+            <div class="col-md-6 mb-3">
               <label class="form-label">Phone</label>
               <input name="PhoneNo" class="form-control" value="{{ m.PhoneNo }}">
             </div>
+          </div>
+          <div class="row">
             <div class="col-md-6 mb-3">
               <label class="form-label">Date of Birth</label>
               <input name="DoB" type="date" class="form-control" value="{{ m.DoB }}">
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Address</label>
-            <input name="Address" class="form-control" value="{{ m.Address }}">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Address</label>
+              <input name="Address" class="form-control" value="{{ m.Address }}">
+            </div>
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">

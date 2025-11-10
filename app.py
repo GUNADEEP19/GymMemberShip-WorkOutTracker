@@ -161,10 +161,12 @@ def members_list():
 @role_required('admin')
 def members_create():
     if request.method == 'POST':
+        password = request.form.get('Password') or 'member123'
         data = (
             request.form['Name'],
             request.form.get('Email') or None,
             request.form.get('PhoneNo') or None,
+            password,
             request.form.get('Address') or None,
             request.form.get('DoB') or None,
             request.form.get('JoinDate') or None,
@@ -174,15 +176,15 @@ def members_create():
         )
         try:
             execute_query(
-                'INSERT INTO Member(Name,Email,PhoneNo,Address,DoB,JoinDate,Gender,PackageId,TrainerId)\n'
-                'VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                'INSERT INTO Member(Name,Email,PhoneNo,Password,Address,DoB,JoinDate,Gender,PackageId,TrainerId)\n'
+                'VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
                 data,
                 commit=True,
             )
-            flash('Member created', 'success')
+            flash('Member created successfully in MySQL database', 'success')
             return redirect(url_for('members_list'))
         except Exception as e:
-            flash(str(e), 'danger')
+            flash(f'Error creating member: {str(e)}', 'danger')
     try:
         packages = execute_query('SELECT PackageId, PackageName FROM Package ORDER BY PackageName', silent=True)
         trainers = execute_query('SELECT TrainerId, TrainerName FROM Trainer ORDER BY TrainerName', silent=True)
@@ -210,11 +212,21 @@ def members_edit(member_id: int):
             member_id,
         )
         try:
-            execute_query(
-                'UPDATE Member SET Name=%s,Email=%s,PhoneNo=%s,Address=%s,DoB=%s,JoinDate=%s,Gender=%s,PackageId=%s,TrainerId=%s WHERE MemberId=%s',
-                data,
-                commit=True,
-            )
+            password = request.form.get('Password') or None
+            if password:
+                execute_query(
+                    'UPDATE Member SET Name=%s,Email=%s,PhoneNo=%s,Password=%s,Address=%s,DoB=%s,JoinDate=%s,Gender=%s,PackageId=%s,TrainerId=%s WHERE MemberId=%s',
+                    (request.form['Name'], request.form.get('Email') or None, request.form.get('PhoneNo') or None, password,
+                     request.form.get('Address') or None, request.form.get('DoB') or None, request.form.get('JoinDate') or None,
+                     request.form.get('Gender') or None, request.form.get('PackageId') or None, request.form.get('TrainerId') or None, member_id),
+                    commit=True,
+                )
+            else:
+                execute_query(
+                    'UPDATE Member SET Name=%s,Email=%s,PhoneNo=%s,Address=%s,DoB=%s,JoinDate=%s,Gender=%s,PackageId=%s,TrainerId=%s WHERE MemberId=%s',
+                    data,
+                    commit=True,
+                )
             flash('Member updated', 'success')
             return redirect(url_for('members_list'))
         except Exception as e:
@@ -271,12 +283,20 @@ def action_enroll():
 def action_make_payment():
     if request.method == 'POST':
         try:
+            package_id = request.form.get('package_id')
+            # Get the package price from the database
+            package = execute_query('SELECT Price FROM Package WHERE PackageId=%s', (package_id,))
+            if not package:
+                flash('Package not found', 'danger')
+                return redirect(url_for('action_make_payment'))
+            amount = package[0]['Price']
+            
             execute_query(
                 'CALL sp_make_payment(%s,%s,%s,%s)',
                 (
                     request.form.get('member_id'),
-                    request.form.get('package_id'),
-                    request.form.get('amount'),
+                    package_id,
+                    amount,
                     request.form.get('mode'),
                 ),
                 commit=True,
@@ -298,7 +318,9 @@ def action_make_payment():
         members = []
         packages = []
         audits = []
-    return render_template('actions/make_payment.html', members=members, packages=packages, audits=audits)
+    # Payment mode options
+    payment_modes = ['Card', 'Cash', 'UPI', 'Net Banking', 'Wallet']
+    return render_template('actions/make_payment.html', members=members, packages=packages, audits=audits, payment_modes=payment_modes)
 
 
 # ---------- MySQL Console (Admin only) ----------

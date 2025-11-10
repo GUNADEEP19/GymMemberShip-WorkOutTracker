@@ -11,6 +11,7 @@
           <div class="mb-3">
             <label class="form-label">Member *</label>
             <select name="member_id" class="form-select" required>
+              <option value="" disabled selected>-- Select Member --</option>
               {% for m in members %}
               <option value="{{ m.MemberId }}">{{ m.Name }}</option>
               {% endfor %}
@@ -18,19 +19,22 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Package *</label>
-            <select name="package_id" class="form-select" required>
+            <select name="package_id" class="form-select" required id="packageSelect">
+              <option value="" disabled selected>-- Select Package --</option>
               {% for p in packages %}
-              <option value="{{ p.PackageId }}">{{ p.PackageName }} (₹{{ p.Price }})</option>
+              <option value="{{ p.PackageId }}" data-price="{{ p.Price }}">{{ p.PackageName }} - ₹{{ p.Price }}</option>
               {% endfor %}
             </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Amount *</label>
-            <input name="amount" type="number" step="0.01" class="form-control" required>
+            <small class="text-muted form-text" id="packagePriceDisplay"></small>
           </div>
           <div class="mb-3">
             <label class="form-label">Payment Mode *</label>
-            <input name="mode" class="form-control" placeholder="Card/Cash/UPI" required>
+            <select name="mode" class="form-select" required>
+              <option value="" disabled selected>-- Select Payment Mode --</option>
+              {% for mode in payment_modes %}
+              <option value="{{ mode }}">{{ mode }}</option>
+              {% endfor %}
+            </select>
           </div>
           <button type="submit" class="btn btn-primary">Pay</button>
         </form>
@@ -73,6 +77,29 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Display package price when selected
+  document.addEventListener('DOMContentLoaded', function() {
+    const packageSelect = document.getElementById('packageSelect');
+    const priceDisplay = document.getElementById('packagePriceDisplay');
+    
+    if (packageSelect && priceDisplay) {
+      packageSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const price = selectedOption.getAttribute('data-price');
+        
+        if (price) {
+          priceDisplay.textContent = `Amount to pay: ₹${price}`;
+          priceDisplay.className = 'text-success fw-bold form-text';
+        } else {
+          priceDisplay.textContent = '';
+          priceDisplay.className = 'form-text';
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
 
 
