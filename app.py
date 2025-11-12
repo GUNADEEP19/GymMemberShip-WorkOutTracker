@@ -255,6 +255,83 @@ def members_delete(member_id: int):
     return redirect(url_for('members_list'))
 
 
+# ---------- Trainer: View Assigned Members ----------
+@app.route('/trainer/members')
+@role_required('trainer')
+def trainer_members():
+    """Trainer can see their assigned members, contact details, and assigned plans"""
+    trainer_id = session.get('user_id')
+    try:
+        # Get all members assigned to this trainer with their contact details
+        members = execute_query(
+            '''SELECT M.MemberId, M.Name, M.Email, M.PhoneNo, M.Address, M.DoB, M.Gender, M.JoinDate,
+                      P.PackageName, P.Price
+               FROM Member M
+               LEFT JOIN Package P ON M.PackageId = P.PackageId
+               WHERE M.TrainerId = %s
+               ORDER BY M.Name''',
+            (trainer_id,),
+            silent=True
+        )
+        
+        # For each member, get their assigned plans
+        members_with_plans = []
+        for member in members or []:
+            plans = execute_query(
+                '''SELECT WP.PlanId, WP.Goal, WP.DurationWeeks
+                   FROM Member_WorkOutPlan MWP
+                   JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
+                   WHERE MWP.MemberId = %s
+                   ORDER BY WP.Goal''',
+                (member['MemberId'],),
+                silent=True
+            )
+            member['plans'] = plans or []
+            members_with_plans.append(member)
+    except Exception as e:
+        flash(f'Error loading data: {str(e)}', 'danger')
+        members_with_plans = []
+    
+    return render_template('trainer/members.html', members=members_with_plans)
+
+
+# ---------- Member: View Assigned Trainer & Plans ----------
+@app.route('/member/my-trainer')
+@role_required('member')
+def member_my_trainer():
+    """Member can see their assigned trainer and assigned plans"""
+    member_id = session.get('user_id')
+    try:
+        # Get assigned trainer details
+        trainer = execute_query(
+            '''SELECT T.TrainerId, T.TrainerName, T.Email, T.PhoneNo, T.DoB
+               FROM Member M
+               JOIN Trainer T ON M.TrainerId = T.TrainerId
+               WHERE M.MemberId = %s''',
+            (member_id,),
+            silent=True
+        )
+        
+        # Get assigned workout plans
+        plans = execute_query(
+            '''SELECT WP.PlanId, WP.Goal, WP.DurationWeeks, WP.TrainerId,
+                      T.TrainerName
+               FROM Member_WorkOutPlan MWP
+               JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
+               LEFT JOIN Trainer T ON WP.TrainerId = T.TrainerId
+               WHERE MWP.MemberId = %s
+               ORDER BY WP.Goal''',
+            (member_id,),
+            silent=True
+        )
+    except Exception as e:
+        flash(f'Error loading data: {str(e)}', 'danger')
+        trainer = None
+        plans = []
+    
+    return render_template('member/my_trainer.html', trainer=trainer[0] if trainer else None, plans=plans or [])
+
+
 # ---------- Procedures / Functions GUI ----------
 @app.route('/actions/enroll', methods=['GET', 'POST'])
 @role_required('admin', 'trainer')
@@ -263,13 +340,36 @@ def action_enroll():
         member_id = request.form.get('member_id')
         plan_id = request.form.get('plan_id')
         try:
+            # For trainers, verify they can only enroll their assigned members
+            if session.get('role') == 'trainer':
+                trainer_id = session.get('user_id')
+                member_check = execute_query(
+                    'SELECT MemberId FROM Member WHERE MemberId=%s AND TrainerId=%s',
+                    (member_id, trainer_id),
+                    silent=True
+                )
+                if not member_check:
+                    flash('You can only enroll members assigned to you', 'danger')
+                    return redirect(url_for('action_enroll'))
+            
             execute_query('CALL sp_enroll_member_to_plan(%s,%s)', (member_id, plan_id), commit=True)
             flash('Enrolled successfully', 'success')
         except Exception as e:
             flash(str(e), 'danger')
         return redirect(url_for('action_enroll'))
     try:
-        members = execute_query('SELECT MemberId, Name FROM Member ORDER BY Name', silent=True)
+        # Limit members based on role
+        if session.get('role') == 'trainer':
+            trainer_id = session.get('user_id')
+            members = execute_query(
+                'SELECT MemberId, Name FROM Member WHERE TrainerId=%s ORDER BY Name',
+                (trainer_id,),
+                silent=True
+            )
+        else:
+            # Admin can see all members
+            members = execute_query('SELECT MemberId, Name FROM Member ORDER BY Name', silent=True)
+        
         plans = execute_query('SELECT PlanId, Goal FROM WorkOutPlan ORDER BY Goal', silent=True)
     except Exception as e:
         flash(f'Error loading data: {str(e)}', 'warning')
@@ -291,10 +391,16 @@ def action_make_payment():
                 return redirect(url_for('action_make_payment'))
             amount = package[0]['Price']
             
+            # For members, they can only pay for themselves
+            member_id = request.form.get('member_id')
+            if session.get('role') == 'member' and int(member_id) != session.get('user_id'):
+                flash('You can only make payments for yourself', 'danger')
+                return redirect(url_for('action_make_payment'))
+            
             execute_query(
                 'CALL sp_make_payment(%s,%s,%s,%s)',
                 (
-                    request.form.get('member_id'),
+                    member_id,
                     package_id,
                     amount,
                     request.form.get('mode'),
@@ -308,11 +414,22 @@ def action_make_payment():
     try:
         # Limit member options for self-service
         if session.get('role') == 'member':
-            members = execute_query('SELECT MemberId, Name FROM Member WHERE MemberId=%s', (session.get('user_id'),), silent=True)
+            member_id = session.get('user_id')
+            members = execute_query('SELECT MemberId, Name FROM Member WHERE MemberId=%s', (member_id,), silent=True)
+            # Show only this member's payment history
+            audits = execute_query(
+                '''SELECT PA.* FROM Payment_Audit PA
+                   JOIN Payment P ON PA.PaymentId = P.PaymentId
+                   WHERE P.MemberId = %s
+                   ORDER BY PA.AuditId DESC LIMIT 20''',
+                (member_id,),
+                silent=True
+            )
         else:
             members = execute_query('SELECT MemberId, Name FROM Member ORDER BY Name', silent=True)
+            # Admin sees all audit records
+            audits = execute_query('SELECT * FROM Payment_Audit ORDER BY AuditId DESC LIMIT 20', silent=True)
         packages = execute_query('SELECT PackageId, PackageName, Price FROM Package ORDER BY PackageName', silent=True)
-        audits = execute_query('SELECT * FROM Payment_Audit ORDER BY AuditId DESC LIMIT 20', silent=True)
     except Exception as e:
         flash(f'Error loading data: {str(e)}', 'warning')
         members = []

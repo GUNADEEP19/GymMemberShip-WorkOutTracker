@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h3>My Assigned Trainer</h3>
+      </div>
+      <div class="card-body">
+        {% if trainer %}
+          <table class="table table-borderless">
+            <tr>
+              <td><strong>Name:</strong></td>
+              <td>{{ trainer.TrainerName }}</td>
+            </tr>
+            <tr>
+              <td><strong>Email:</strong></td>
+              <td>{{ trainer.Email or '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Phone:</strong></td>
+              <td>{{ trainer.PhoneNo or '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Date of Birth:</strong></td>
+              <td>{{ trainer.DoB or '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Trainer ID:</strong></td>
+              <td>{{ trainer.TrainerId }}</td>
+            </tr>
+          </table>
+        {% else %}
+          <div class="alert alert-warning">
+            <h5>No Trainer Assigned</h5>
+            <p>You don't have a trainer assigned yet. Please contact the admin.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-6 mb-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white">
+        <h3>My Assigned Workout Plans</h3>
+      </div>
+      <div class="card-body">
+        {% if plans %}
+          <div class="list-group">
+            {% for plan in plans %}
+            <div class="list-group-item">
+              <h5 class="mb-2">{{ plan.Goal }}</h5>
+              <p class="mb-1"><strong>Duration:</strong> {{ plan.DurationWeeks }} weeks</p>
+              <p class="mb-1"><strong>Plan ID:</strong> {{ plan.PlanId }}</p>
+              {% if plan.TrainerName %}
+              <p class="mb-0"><strong>Created by:</strong> {{ plan.TrainerName }}</p>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info">
+            <h5>No Plans Assigned</h5>
+            <p>You don't have any workout plans assigned yet. Please contact your trainer or admin.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

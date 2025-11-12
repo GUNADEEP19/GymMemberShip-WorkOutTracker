@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3>My Assigned Members</h3>
+  </div>
+  <div class="card-body">
+    {% if members %}
+      {% for member in members %}
+      <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">{{ member.Name }} <span class="badge bg-primary">Member ID: {{ member.MemberId }}</span></h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="text-muted">Contact Details</h6>
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <td><strong>Email:</strong></td>
+                  <td>{{ member.Email or '-' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Phone:</strong></td>
+                  <td>{{ member.PhoneNo or '-' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Address:</strong></td>
+                  <td>{{ member.Address or '-' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Date of Birth:</strong></td>
+                  <td>{{ member.DoB or '-' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Gender:</strong></td>
+                  <td>{{ member.Gender or '-' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Join Date:</strong></td>
+                  <td>{{ member.JoinDate or '-' }}</td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-muted">Package Information</h6>
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <td><strong>Package:</strong></td>
+                  <td>{{ member.PackageName or 'Not assigned' }}</td>
+                </tr>
+                <tr>
+                  <td><strong>Price:</strong></td>
+                  <td>{% if member.Price %}₹{{ member.Price }}{% else %}-{% endif %}</td>
+                </tr>
+              </table>
+              
+              <h6 class="text-muted mt-3">Assigned Workout Plans</h6>
+              {% if member.plans %}
+                <div class="list-group list-group-flush">
+                  {% for plan in member.plans %}
+                  <div class="list-group-item">
+                    <strong>{{ plan.Goal }}</strong>
+                    <br>
+                    <small class="text-muted">Duration: {{ plan.DurationWeeks }} weeks | Plan ID: {{ plan.PlanId }}</small>
+                  </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="text-muted">No workout plans assigned yet.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-info">
+        <h5>No Members Assigned</h5>
+        <p>You don't have any members assigned to you yet.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

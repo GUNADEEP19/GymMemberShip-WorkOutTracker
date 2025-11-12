@@ -7,18 +7,33 @@
         <h3>Enroll Member to Plan</h3>
       </div>
       <div class="card-body">
+        {% if not members or members|length == 0 %}
+        <div class="alert alert-warning">
+          <h5>No Members Available</h5>
+          {% if session.role == 'trainer' %}
+          <p>You don't have any assigned members yet. Please contact admin to get members assigned to you.</p>
+          {% else %}
+          <p>No members found in the system.</p>
+          {% endif %}
+        </div>
+        {% else %}
         <form method="post">
           <div class="mb-3">
-            <label class="form-label">Member *</label>
+            <label class="form-label" selected disabled>Select Member *</label>
             <select name="member_id" class="form-select" required>
+              <option value="" disabled selected>-- Select Member --</option>
               {% for m in members %}
               <option value="{{ m.MemberId }}">{{ m.Name }}</option>
               {% endfor %}
             </select>
+            {% if session.role == 'trainer' %}
+            <small class="text-muted form-text">Only your assigned members are shown</small>
+            {% endif %}
           </div>
           <div class="mb-3">
-            <label class="form-label">Plan *</label>
+            <label class="form-label" selected disabled>Select Plan *</label>
             <select name="plan_id" class="form-select" required>
+              <option value="" disabled selected>-- Select Plan --</option>
               {% for p in plans %}
               <option value="{{ p.PlanId }}">{{ p.Goal }}</option>
               {% endfor %}
@@ -26,6 +41,7 @@
           </div>
           <button type="submit" class="btn btn-primary">Enroll</button>
         </form>
+        {% endif %}
       </div>
     </div>
   </div>

@@ -68,6 +68,12 @@
               {% if session.role == 'admin' or session.role == 'trainer' %}
                 <li class="nav-item"><a class="nav-link" href="/actions/enroll">Enroll</a></li>
               {% endif %}
+              {% if session.role == 'trainer' %}
+                <li class="nav-item"><a class="nav-link" href="/trainer/members">My Members</a></li>
+              {% endif %}
+              {% if session.role == 'member' %}
+                <li class="nav-item"><a class="nav-link" href="/member/my-trainer">My Trainer</a></li>
+              {% endif %}
               {% if session.role == 'admin' %}
                 <li class="nav-item"><a class="nav-link" href="/members">Members</a></li>
                 <li class="nav-item"><a class="nav-link" href="/db-users">DB Users</a></li>

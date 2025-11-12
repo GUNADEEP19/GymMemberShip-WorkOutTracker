@@ -8,6 +8,7 @@
       </div>
       <div class="card-body">
         <form method="post">
+          {% if session.role == 'admin' %}
           <div class="mb-3">
             <label class="form-label">Member *</label>
             <select name="member_id" class="form-select" required>
@@ -17,6 +18,19 @@
               {% endfor %}
             </select>
           </div>
+          {% else %}
+          {% if members and members|length > 0 %}
+          <input type="hidden" name="member_id" value="{{ members[0].MemberId }}">
+          <div class="mb-3">
+            <label class="form-label">Member</label>
+            <input type="text" class="form-control" value="{{ members[0].Name }}" readonly>
+          </div>
+          {% else %}
+          <div class="alert alert-warning">
+            <p>No member record found. Please contact admin.</p>
+          </div>
+          {% endif %}
+          {% endif %}
           <div class="mb-3">
             <label class="form-label">Package *</label>
             <select name="package_id" class="form-select" required id="packageSelect">
@@ -45,7 +59,7 @@
   <div class="col-md-6">
     <div class="card">
       <div class="card-header">
-        <h4>Recent Audit Trail</h4>
+        <h4>{% if session.role == 'member' %}My Payment History{% else %}Recent Audit Trail{% endif %}</h4>
       </div>
       <div class="card-body">
         {% if audits %}
