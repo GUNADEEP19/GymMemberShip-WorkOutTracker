@@ -150,7 +150,410 @@ DELIMITER ;
 
 
 -- STEP 4 — STORED PROCEDURES
--- 4.1 Enroll a member to a workout plan (atomic operation)
+-- 4.1 Authentication helpers
+DELIMITER //
+CREATE PROCEDURE sp_get_admin_by_email(IN p_email VARCHAR(150))
+BEGIN
+  SELECT * FROM Admin WHERE Email = p_email LIMIT 1;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_by_email(IN p_email VARCHAR(150))
+BEGIN
+  SELECT * FROM Member WHERE Email = p_email LIMIT 1;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_trainer_by_email(IN p_email VARCHAR(150))
+BEGIN
+  SELECT * FROM Trainer WHERE Email = p_email LIMIT 1;
+END//
+DELIMITER ;
+
+-- 4.2 Reference data lookups
+DELIMITER //
+CREATE PROCEDURE sp_list_packages()
+BEGIN
+  SELECT PackageId, PackageName, Price
+  FROM Package
+  ORDER BY PackageName;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_trainers()
+BEGIN
+  SELECT TrainerId, TrainerName
+  FROM Trainer
+  ORDER BY TrainerName;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_workout_plans()
+BEGIN
+  SELECT PlanId, Goal
+  FROM WorkOutPlan
+  ORDER BY Goal;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_members_basic()
+BEGIN
+  SELECT MemberId, Name
+  FROM Member
+  ORDER BY Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_members_for_trainer(IN p_trainer INT)
+BEGIN
+  SELECT MemberId, Name
+  FROM Member
+  WHERE TrainerId = p_trainer
+  ORDER BY Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_basic(IN p_member INT)
+BEGIN
+  SELECT MemberId, Name
+  FROM Member
+  WHERE MemberId = p_member;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_package_price(IN p_package INT)
+BEGIN
+  SELECT Price
+  FROM Package
+  WHERE PackageId = p_package;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_payment_audit_all()
+BEGIN
+  SELECT *
+  FROM Payment_Audit
+  ORDER BY AuditId DESC;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_payment_audit_for_member(IN p_member INT)
+BEGIN
+  SELECT PA.*
+  FROM Payment_Audit PA
+  JOIN Payment P ON PA.PaymentId = P.PaymentId
+  WHERE P.MemberId = p_member
+  ORDER BY PA.AuditId DESC;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_equipment()
+BEGIN
+  SELECT EquipmentId, Name, Quantity
+  FROM Equipment
+  ORDER BY Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_list_exercises()
+BEGIN
+  SELECT E.ExerciseId,
+         E.ExerciseName,
+         E.MuscleGroup,
+         E.DefaultSets,
+         E.DefaultReps,
+         E.EquipmentId,
+         EQ.Name AS EquipmentName
+  FROM Exercise E
+  LEFT JOIN Equipment EQ ON E.EquipmentId = EQ.EquipmentId
+  ORDER BY E.ExerciseName;
+END//
+DELIMITER ;
+
+-- 4.3 Member CRUD
+DELIMITER //
+CREATE PROCEDURE sp_get_members()
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         M.PhoneNo,
+         M.Password,
+         M.Address,
+         M.DoB,
+         M.JoinDate,
+         M.Gender,
+         M.PackageId,
+         M.TrainerId,
+         P.PackageName,
+         T.TrainerName
+  FROM Member M
+  LEFT JOIN Package P ON M.PackageId = P.PackageId
+  LEFT JOIN Trainer T ON M.TrainerId = T.TrainerId
+  ORDER BY M.MemberId;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_detail(IN p_member INT)
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         M.PhoneNo,
+         M.Password,
+         M.Address,
+         M.DoB,
+         M.JoinDate,
+         M.Gender,
+         M.PackageId,
+         M.TrainerId
+  FROM Member M
+  WHERE M.MemberId = p_member;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_create_member(
+  IN p_name VARCHAR(150),
+  IN p_email VARCHAR(150),
+  IN p_phone VARCHAR(20),
+  IN p_password VARCHAR(255),
+  IN p_address TEXT,
+  IN p_dob DATE,
+  IN p_join DATE,
+  IN p_gender VARCHAR(10),
+  IN p_package INT,
+  IN p_trainer INT
+)
+BEGIN
+  IF p_email = '' THEN SET p_email = NULL; END IF;
+  IF p_phone = '' THEN SET p_phone = NULL; END IF;
+  IF p_address = '' THEN SET p_address = NULL; END IF;
+  IF p_gender = '' THEN SET p_gender = NULL; END IF;
+  IF p_password IS NULL OR p_password = '' THEN
+    SET p_password = 'member123';
+  END IF;
+  INSERT INTO Member(Name, Email, PhoneNo, Password, Address, DoB, JoinDate, Gender, PackageId, TrainerId)
+  VALUES(p_name, p_email, p_phone, p_password, p_address, p_dob, p_join, p_gender, p_package, p_trainer);
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_update_member(
+  IN p_member INT,
+  IN p_name VARCHAR(150),
+  IN p_email VARCHAR(150),
+  IN p_phone VARCHAR(20),
+  IN p_password VARCHAR(255),
+  IN p_address TEXT,
+  IN p_dob DATE,
+  IN p_join DATE,
+  IN p_gender VARCHAR(10),
+  IN p_package INT,
+  IN p_trainer INT
+)
+BEGIN
+  IF p_email = '' THEN SET p_email = NULL; END IF;
+  IF p_phone = '' THEN SET p_phone = NULL; END IF;
+  IF p_address = '' THEN SET p_address = NULL; END IF;
+  IF p_gender = '' THEN SET p_gender = NULL; END IF;
+  UPDATE Member
+  SET Name = p_name,
+      Email = p_email,
+      PhoneNo = p_phone,
+      Password = CASE WHEN p_password IS NULL OR p_password = '' THEN Password ELSE p_password END,
+      Address = p_address,
+      DoB = p_dob,
+      JoinDate = p_join,
+      Gender = p_gender,
+      PackageId = p_package,
+      TrainerId = p_trainer
+  WHERE MemberId = p_member;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_delete_member(IN p_member INT)
+BEGIN
+  DELETE FROM Member WHERE MemberId = p_member;
+END//
+DELIMITER ;
+
+-- 4.4 Trainer/Member views
+DELIMITER //
+CREATE PROCEDURE sp_get_trainer_members(IN p_trainer INT)
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         M.PhoneNo,
+         M.Address,
+         M.DoB,
+         M.Gender,
+         M.JoinDate,
+         P.PackageName,
+         P.Price
+  FROM Member M
+  LEFT JOIN Package P ON M.PackageId = P.PackageId
+  WHERE M.TrainerId = p_trainer
+  ORDER BY M.Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_plans(IN p_member INT)
+BEGIN
+  SELECT WP.PlanId,
+         WP.Goal,
+         WP.DurationWeeks
+  FROM Member_WorkOutPlan MWP
+  JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
+  WHERE MWP.MemberId = p_member
+  ORDER BY WP.Goal;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_plans_with_trainer(IN p_member INT)
+BEGIN
+  SELECT WP.PlanId,
+         WP.Goal,
+         WP.DurationWeeks,
+         WP.TrainerId,
+         T.TrainerName
+  FROM Member_WorkOutPlan MWP
+  JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
+  LEFT JOIN Trainer T ON WP.TrainerId = T.TrainerId
+  WHERE MWP.MemberId = p_member
+  ORDER BY WP.Goal;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_member_trainer_info(IN p_member INT)
+BEGIN
+  SELECT T.TrainerId,
+         T.TrainerName,
+         T.Email,
+         T.PhoneNo,
+         T.DoB
+  FROM Member M
+  JOIN Trainer T ON M.TrainerId = T.TrainerId
+  WHERE M.MemberId = p_member;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_verify_member_trainer(IN p_member INT, IN p_trainer INT)
+BEGIN
+  SELECT MemberId
+  FROM Member
+  WHERE MemberId = p_member AND TrainerId = p_trainer;
+END//
+DELIMITER ;
+
+-- 4.5 Membership insights
+DELIMITER //
+CREATE PROCEDURE sp_get_membership_end_dates()
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         fn_membership_end_date(M.MemberId) AS EndDate
+  FROM Member M
+  ORDER BY M.Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_membership_end_date_for_member(IN p_member INT)
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         fn_membership_end_date(M.MemberId) AS EndDate
+  FROM Member M
+  WHERE M.MemberId = p_member;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_active_status_all()
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         fn_is_member_active(M.MemberId) AS IsActive,
+         fn_membership_end_date(M.MemberId) AS EndDate
+  FROM Member M
+  ORDER BY M.Name;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_active_status_for_trainer(IN p_trainer INT)
+BEGIN
+  SELECT M.MemberId,
+         M.Name,
+         M.Email,
+         fn_is_member_active(M.MemberId) AS IsActive,
+         fn_membership_end_date(M.MemberId) AS EndDate
+  FROM Member M
+  WHERE M.TrainerId = p_trainer
+  ORDER BY M.Name;
+END//
+DELIMITER ;
+
+-- 4.6 Attendance queries
+DELIMITER //
+CREATE PROCEDURE sp_get_attendance_all()
+BEGIN
+  SELECT A.AttendanceId,
+         A.MemberId,
+         M.Name AS MemberName,
+         A.Date,
+         A.CheckInTime,
+         A.CheckOutTime,
+         TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
+  FROM Attendance A
+  JOIN Member M ON A.MemberId = M.MemberId
+  ORDER BY A.Date DESC, A.CheckInTime DESC
+  LIMIT 100;
+END//
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_get_attendance_for_trainer(IN p_trainer INT)
+BEGIN
+  SELECT A.AttendanceId,
+         A.MemberId,
+         M.Name AS MemberName,
+         A.Date,
+         A.CheckInTime,
+         A.CheckOutTime,
+         TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
+  FROM Attendance A
+  JOIN Member M ON A.MemberId = M.MemberId
+  WHERE M.TrainerId = p_trainer
+  ORDER BY A.Date DESC, A.CheckInTime DESC
+  LIMIT 100;
+END//
+DELIMITER ;
+
+-- 4.7 Business actions (existing)
 DELIMITER //
 CREATE PROCEDURE sp_enroll_member_to_plan(IN p_member INT, IN p_plan INT)
 BEGIN
@@ -168,8 +571,6 @@ BEGIN
 END//
 DELIMITER ;
 
-
--- 4.2 Record attendance (atomic, uses AUTO_INCREMENT)
 DELIMITER //
 CREATE PROCEDURE sp_record_attendance(
   IN p_member INT, IN p_date DATE,
@@ -188,8 +589,6 @@ BEGIN
 END//
 DELIMITER ;
 
-
--- 4.3 Make a payment (atomic, uses AUTO_INCREMENT, triggers handle validation & audit)
 DELIMITER //
 CREATE PROCEDURE sp_make_payment(
   IN p_member INT, IN p_package INT, IN p_amount DECIMAL(8,2), IN p_mode VARCHAR(50))

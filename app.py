@@ -66,7 +66,7 @@ def login():
         
         try:
             # Try Admin first
-            admin = execute_query('SELECT * FROM Admin WHERE Email=%s', (email,))
+            admin = execute_query('CALL sp_get_admin_by_email(%s)', (email,), silent=True)
             if admin and admin[0]['Password'] == password:
                 session['role'] = 'admin'
                 session['user_id'] = admin[0]['AdminId']
@@ -75,7 +75,7 @@ def login():
                 return redirect(url_for('dashboard'))
             
             # Try Member
-            member = execute_query('SELECT * FROM Member WHERE Email=%s', (email,))
+            member = execute_query('CALL sp_get_member_by_email(%s)', (email,), silent=True)
             if member and member[0]['Password'] == password:
                 session['role'] = 'member'
                 session['user_id'] = member[0]['MemberId']
@@ -84,7 +84,7 @@ def login():
                 return redirect(url_for('dashboard'))
             
             # Try Trainer
-            trainer = execute_query('SELECT * FROM Trainer WHERE Email=%s', (email,))
+            trainer = execute_query('CALL sp_get_trainer_by_email(%s)', (email,), silent=True)
             if trainer and trainer[0]['Password'] == password:
                 session['role'] = 'trainer'
                 session['user_id'] = trainer[0]['TrainerId']
@@ -150,7 +150,7 @@ def execute_query(sql, params=None, commit=False, silent=False):
 @role_required('admin')
 def members_list():
     try:
-        rows = execute_query('SELECT * FROM Member ORDER BY MemberId')
+        rows = execute_query('CALL sp_get_members()', silent=True)
     except Exception as e:
         flash(f'Database error: {str(e)}. Ensure DB is set up.', 'danger')
         rows = []
@@ -160,95 +160,116 @@ def members_list():
 @app.route('/members/create', methods=['GET', 'POST'])
 @role_required('admin')
 def members_create():
+    try:
+        packages = execute_query('CALL sp_list_packages()', silent=True)
+        trainers = execute_query('CALL sp_list_trainers()', silent=True)
+    except Exception as e:
+        flash(f'Error loading dropdowns: {str(e)}', 'warning')
+        packages = []
+        trainers = []
+
     if request.method == 'POST':
-        password = request.form.get('Password') or 'member123'
-        data = (
-            request.form['Name'],
-            request.form.get('Email') or None,
-            request.form.get('PhoneNo') or None,
-            password,
-            request.form.get('Address') or None,
-            request.form.get('DoB') or None,
-            request.form.get('JoinDate') or None,
-            request.form.get('Gender') or None,
-            request.form.get('PackageId') or None,
-            request.form.get('TrainerId') or None,
-        )
+        name = request.form['Name'].strip()
+        email = request.form.get('Email') or None
+        phone = request.form.get('PhoneNo') or None
+        password = request.form.get('Password') or None
+        address = request.form.get('Address') or None
+        dob = request.form.get('DoB') or None
+        join_date = request.form.get('JoinDate') or None
+        gender = request.form.get('Gender') or None
+        package_id = request.form.get('PackageId')
+        package_id = int(package_id) if package_id else None
+        trainer_id = request.form.get('TrainerId')
+        trainer_id = int(trainer_id) if trainer_id else None
+
         try:
             execute_query(
-                'INSERT INTO Member(Name,Email,PhoneNo,Password,Address,DoB,JoinDate,Gender,PackageId,TrainerId)\n'
-                'VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-                data,
+                'CALL sp_create_member(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                (
+                    name,
+                    email,
+                    phone,
+                    password,
+                    address,
+                    dob or None,
+                    join_date or None,
+                    gender or None,
+                    package_id,
+                    trainer_id,
+                ),
                 commit=True,
             )
             flash('Member created successfully in MySQL database', 'success')
             return redirect(url_for('members_list'))
         except Exception as e:
             flash(f'Error creating member: {str(e)}', 'danger')
-    try:
-        packages = execute_query('SELECT PackageId, PackageName FROM Package ORDER BY PackageName', silent=True)
-        trainers = execute_query('SELECT TrainerId, TrainerName FROM Trainer ORDER BY TrainerName', silent=True)
-    except Exception as e:
-        flash(f'Error loading dropdowns: {str(e)}', 'warning')
-        packages = []
-        trainers = []
-    return render_template('members/create.html', packages=packages, trainers=trainers)
+
+    return render_template('members/create.html', packages=packages or [], trainers=trainers or [])
 
 
 @app.route('/members/<int:member_id>/edit', methods=['GET', 'POST'])
 @role_required('admin')
 def members_edit(member_id: int):
+    try:
+        member_rows = execute_query('CALL sp_get_member_detail(%s)', (member_id,), silent=True)
+        if not member_rows:
+            flash('Member not found', 'warning')
+            return redirect(url_for('members_list'))
+        member_record = member_rows[0]
+        packages = execute_query('CALL sp_list_packages()', silent=True)
+        trainers = execute_query('CALL sp_list_trainers()', silent=True)
+    except Exception as e:
+        flash(f'Database error: {str(e)}', 'danger')
+        return redirect(url_for('members_list'))
+
     if request.method == 'POST':
-        data = (
-            request.form['Name'],
-            request.form.get('Email') or None,
-            request.form.get('PhoneNo') or None,
-            request.form.get('Address') or None,
-            request.form.get('DoB') or None,
-            request.form.get('JoinDate') or None,
-            request.form.get('Gender') or None,
-            request.form.get('PackageId') or None,
-            request.form.get('TrainerId') or None,
-            member_id,
-        )
+        name = request.form['Name'].strip()
+        email = request.form.get('Email') or None
+        phone = request.form.get('PhoneNo') or None
+        password = request.form.get('Password') or None
+        address = request.form.get('Address') or None
+        dob = request.form.get('DoB') or None
+        join_date = request.form.get('JoinDate') or None
+        gender = request.form.get('Gender') or None
+        package_id = request.form.get('PackageId')
+        package_id = int(package_id) if package_id else None
+        trainer_id = request.form.get('TrainerId')
+        trainer_id = int(trainer_id) if trainer_id else None
         try:
-            password = request.form.get('Password') or None
-            if password:
-                execute_query(
-                    'UPDATE Member SET Name=%s,Email=%s,PhoneNo=%s,Password=%s,Address=%s,DoB=%s,JoinDate=%s,Gender=%s,PackageId=%s,TrainerId=%s WHERE MemberId=%s',
-                    (request.form['Name'], request.form.get('Email') or None, request.form.get('PhoneNo') or None, password,
-                     request.form.get('Address') or None, request.form.get('DoB') or None, request.form.get('JoinDate') or None,
-                     request.form.get('Gender') or None, request.form.get('PackageId') or None, request.form.get('TrainerId') or None, member_id),
-                    commit=True,
-                )
-            else:
-                execute_query(
-                    'UPDATE Member SET Name=%s,Email=%s,PhoneNo=%s,Address=%s,DoB=%s,JoinDate=%s,Gender=%s,PackageId=%s,TrainerId=%s WHERE MemberId=%s',
-                    data,
-                    commit=True,
-                )
+            execute_query(
+                'CALL sp_update_member(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',
+                (
+                    member_id,
+                    name,
+                    email,
+                    phone,
+                    password,
+                    address,
+                    dob or None,
+                    join_date or None,
+                    gender or None,
+                    package_id,
+                    trainer_id,
+                ),
+                commit=True,
+            )
             flash('Member updated', 'success')
             return redirect(url_for('members_list'))
         except Exception as e:
             flash(str(e), 'danger')
-    try:
-        row = execute_query('SELECT * FROM Member WHERE MemberId=%s', (member_id,))
-        if not row:
-            flash('Member not found', 'warning')
-            return redirect(url_for('members_list'))
-        packages = execute_query('SELECT PackageId, PackageName FROM Package ORDER BY PackageName', silent=True)
-        trainers = execute_query('SELECT TrainerId, TrainerName FROM Trainer ORDER BY TrainerName', silent=True)
-    except Exception as e:
-        flash(f'Database error: {str(e)}', 'danger')
-        return redirect(url_for('members_list'))
-    return render_template('members/edit.html', m=row[0], packages=packages or [], trainers=trainers or [])
+            # refresh latest data on error
+            refreshed = execute_query('CALL sp_get_member_detail(%s)', (member_id,), silent=True)
+            if refreshed:
+                member_record = refreshed[0]
+
+    return render_template('members/edit.html', m=member_record, packages=packages or [], trainers=trainers or [])
 
 
 @app.route('/members/<int:member_id>/delete', methods=['POST'])
 @role_required('admin')
 def members_delete(member_id: int):
     try:
-        execute_query('DELETE FROM Member WHERE MemberId=%s', (member_id,), commit=True)
+        execute_query('CALL sp_delete_member(%s)', (member_id,), commit=True)
         flash('Member deleted', 'success')
     except Exception as e:
         flash(str(e), 'danger')
@@ -262,30 +283,10 @@ def trainer_members():
     """Trainer can see their assigned members, contact details, and assigned plans"""
     trainer_id = session.get('user_id')
     try:
-        # Get all members assigned to this trainer with their contact details
-        members = execute_query(
-            '''SELECT M.MemberId, M.Name, M.Email, M.PhoneNo, M.Address, M.DoB, M.Gender, M.JoinDate,
-                      P.PackageName, P.Price
-               FROM Member M
-               LEFT JOIN Package P ON M.PackageId = P.PackageId
-               WHERE M.TrainerId = %s
-               ORDER BY M.Name''',
-            (trainer_id,),
-            silent=True
-        )
-        
-        # For each member, get their assigned plans
+        members = execute_query('CALL sp_get_trainer_members(%s)', (trainer_id,), silent=True)
         members_with_plans = []
         for member in members or []:
-            plans = execute_query(
-                '''SELECT WP.PlanId, WP.Goal, WP.DurationWeeks
-                   FROM Member_WorkOutPlan MWP
-                   JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
-                   WHERE MWP.MemberId = %s
-                   ORDER BY WP.Goal''',
-                (member['MemberId'],),
-                silent=True
-            )
+            plans = execute_query('CALL sp_get_member_plans(%s)', (member['MemberId'],), silent=True)
             member['plans'] = plans or []
             members_with_plans.append(member)
     except Exception as e:
@@ -302,28 +303,8 @@ def member_my_trainer():
     """Member can see their assigned trainer and assigned plans"""
     member_id = session.get('user_id')
     try:
-        # Get assigned trainer details
-        trainer = execute_query(
-            '''SELECT T.TrainerId, T.TrainerName, T.Email, T.PhoneNo, T.DoB
-               FROM Member M
-               JOIN Trainer T ON M.TrainerId = T.TrainerId
-               WHERE M.MemberId = %s''',
-            (member_id,),
-            silent=True
-        )
-        
-        # Get assigned workout plans
-        plans = execute_query(
-            '''SELECT WP.PlanId, WP.Goal, WP.DurationWeeks, WP.TrainerId,
-                      T.TrainerName
-               FROM Member_WorkOutPlan MWP
-               JOIN WorkOutPlan WP ON MWP.PlanId = WP.PlanId
-               LEFT JOIN Trainer T ON WP.TrainerId = T.TrainerId
-               WHERE MWP.MemberId = %s
-               ORDER BY WP.Goal''',
-            (member_id,),
-            silent=True
-        )
+        trainer = execute_query('CALL sp_get_member_trainer_info(%s)', (member_id,), silent=True)
+        plans = execute_query('CALL sp_get_member_plans_with_trainer(%s)', (member_id,), silent=True)
     except Exception as e:
         flash(f'Error loading data: {str(e)}', 'danger')
         trainer = None
@@ -340,37 +321,33 @@ def action_enroll():
         member_id = request.form.get('member_id')
         plan_id = request.form.get('plan_id')
         try:
+            if not member_id or not plan_id:
+                flash('Member and plan are required', 'danger')
+                return redirect(url_for('action_enroll'))
+            member_id_int = int(member_id)
+            plan_id_int = int(plan_id)
+
             # For trainers, verify they can only enroll their assigned members
             if session.get('role') == 'trainer':
                 trainer_id = session.get('user_id')
-                member_check = execute_query(
-                    'SELECT MemberId FROM Member WHERE MemberId=%s AND TrainerId=%s',
-                    (member_id, trainer_id),
-                    silent=True
-                )
+                member_check = execute_query('CALL sp_verify_member_trainer(%s,%s)', (member_id_int, trainer_id), silent=True)
                 if not member_check:
                     flash('You can only enroll members assigned to you', 'danger')
                     return redirect(url_for('action_enroll'))
             
-            execute_query('CALL sp_enroll_member_to_plan(%s,%s)', (member_id, plan_id), commit=True)
+            execute_query('CALL sp_enroll_member_to_plan(%s,%s)', (member_id_int, plan_id_int), commit=True)
             flash('Enrolled successfully', 'success')
         except Exception as e:
             flash(str(e), 'danger')
         return redirect(url_for('action_enroll'))
+
     try:
-        # Limit members based on role
         if session.get('role') == 'trainer':
             trainer_id = session.get('user_id')
-            members = execute_query(
-                'SELECT MemberId, Name FROM Member WHERE TrainerId=%s ORDER BY Name',
-                (trainer_id,),
-                silent=True
-            )
+            members = execute_query('CALL sp_list_members_for_trainer(%s)', (trainer_id,), silent=True)
         else:
-            # Admin can see all members
-            members = execute_query('SELECT MemberId, Name FROM Member ORDER BY Name', silent=True)
-        
-        plans = execute_query('SELECT PlanId, Goal FROM WorkOutPlan ORDER BY Goal', silent=True)
+            members = execute_query('CALL sp_list_members_basic()', silent=True)
+        plans = execute_query('CALL sp_list_workout_plans()', silent=True)
     except Exception as e:
         flash(f'Error loading data: {str(e)}', 'warning')
         members = []
@@ -384,26 +361,31 @@ def action_make_payment():
     if request.method == 'POST':
         try:
             package_id = request.form.get('package_id')
-            # Get the package price from the database
-            package = execute_query('SELECT Price FROM Package WHERE PackageId=%s', (package_id,))
+            member_id = request.form.get('member_id')
+            mode = request.form.get('mode')
+            if not package_id or not member_id:
+                flash('Member and package are required', 'danger')
+                return redirect(url_for('action_make_payment'))
+            package_id_int = int(package_id)
+            member_id_int = int(member_id)
+
+            package = execute_query('CALL sp_get_package_price(%s)', (package_id_int,), silent=True)
             if not package:
                 flash('Package not found', 'danger')
                 return redirect(url_for('action_make_payment'))
             amount = package[0]['Price']
-            
-            # For members, they can only pay for themselves
-            member_id = request.form.get('member_id')
-            if session.get('role') == 'member' and int(member_id) != session.get('user_id'):
+
+            if session.get('role') == 'member' and member_id_int != session.get('user_id'):
                 flash('You can only make payments for yourself', 'danger')
                 return redirect(url_for('action_make_payment'))
-            
+
             execute_query(
                 'CALL sp_make_payment(%s,%s,%s,%s)',
                 (
-                    member_id,
-                    package_id,
+                    member_id_int,
+                    package_id_int,
                     amount,
-                    request.form.get('mode'),
+                    mode,
                 ),
                 commit=True,
             )
@@ -411,31 +393,21 @@ def action_make_payment():
         except Exception as e:
             flash(str(e), 'danger')
         return redirect(url_for('action_make_payment'))
+
     try:
-        # Limit member options for self-service
         if session.get('role') == 'member':
             member_id = session.get('user_id')
-            members = execute_query('SELECT MemberId, Name FROM Member WHERE MemberId=%s', (member_id,), silent=True)
-            # Show only this member's payment history
-            audits = execute_query(
-                '''SELECT PA.* FROM Payment_Audit PA
-                   JOIN Payment P ON PA.PaymentId = P.PaymentId
-                   WHERE P.MemberId = %s
-                   ORDER BY PA.AuditId DESC LIMIT 20''',
-                (member_id,),
-                silent=True
-            )
+            members = execute_query('CALL sp_get_member_basic(%s)', (member_id,), silent=True)
+            audits = execute_query('CALL sp_get_payment_audit_for_member(%s)', (member_id,), silent=True)
         else:
-            members = execute_query('SELECT MemberId, Name FROM Member ORDER BY Name', silent=True)
-            # Admin sees all audit records
-            audits = execute_query('SELECT * FROM Payment_Audit ORDER BY AuditId DESC LIMIT 20', silent=True)
-        packages = execute_query('SELECT PackageId, PackageName, Price FROM Package ORDER BY PackageName', silent=True)
+            members = execute_query('CALL sp_list_members_basic()', silent=True)
+            audits = execute_query('CALL sp_get_payment_audit_all()', silent=True)
+        packages = execute_query('CALL sp_list_packages()', silent=True)
     except Exception as e:
         flash(f'Error loading data: {str(e)}', 'warning')
         members = []
         packages = []
         audits = []
-    # Payment mode options
     payment_modes = ['Card', 'Cash', 'UPI', 'Net Banking', 'Wallet']
     return render_template('actions/make_payment.html', members=members, packages=packages, audits=audits, payment_modes=payment_modes)
 
@@ -450,49 +422,43 @@ def action_mark_attendance():
             date = request.form.get('date')
             check_in = request.form.get('check_in')
             check_out = request.form.get('check_out')
-            
+
+            if not member_id:
+                flash('Member is required', 'danger')
+                return redirect(url_for('action_mark_attendance'))
+            member_id_int = int(member_id)
+
             # For trainers, verify they can only mark attendance for assigned members
             if session.get('role') == 'trainer':
                 trainer_id = session.get('user_id')
-                member_check = execute_query(
-                    'SELECT MemberId FROM Member WHERE MemberId=%s AND TrainerId=%s',
-                    (member_id, trainer_id),
-                    silent=True
-                )
+                member_check = execute_query('CALL sp_verify_member_trainer(%s,%s)', (member_id_int, trainer_id), silent=True)
                 if not member_check:
                     flash('You can only mark attendance for members assigned to you', 'danger')
                     return redirect(url_for('action_mark_attendance'))
-            
+
             # Use stored procedure to record attendance (triggers handle validation)
             execute_query(
                 'CALL sp_record_attendance(%s,%s,%s,%s)',
-                (member_id, date, check_in, check_out),
+                (member_id_int, date, check_in, check_out),
                 commit=True
             )
             flash('Attendance recorded successfully', 'success')
         except Exception as e:
             flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('action_mark_attendance'))
-    
+
     try:
-        # Limit members based on role
         if session.get('role') == 'trainer':
             trainer_id = session.get('user_id')
-            members = execute_query(
-                'SELECT MemberId, Name, Email FROM Member WHERE TrainerId=%s ORDER BY Name',
-                (trainer_id,),
-                silent=True
-            )
+            members = execute_query('CALL sp_list_members_for_trainer(%s)', (trainer_id,), silent=True)
         else:
-            # Admin can see all members
-            members = execute_query('SELECT MemberId, Name, Email FROM Member ORDER BY Name', silent=True)
+            members = execute_query('CALL sp_list_members_basic()', silent=True)
     except Exception as e:
         flash(f'Error loading members: {str(e)}', 'warning')
         members = []
     
-    # Get today's date for default value
-    from datetime import date
-    today = date.today().isoformat()
+    from datetime import date as _date
+    today = _date.today().isoformat()
     
     return render_template('actions/mark_attendance.html', members=members, today=today)
 
@@ -503,31 +469,9 @@ def attendance_view():
     try:
         if session.get('role') == 'trainer':
             trainer_id = session.get('user_id')
-            # View attendance for assigned members only
-            attendance = execute_query(
-                '''SELECT A.AttendanceId, A.MemberId, M.Name AS MemberName, 
-                          A.Date, A.CheckInTime, A.CheckOutTime,
-                          TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
-                   FROM Attendance A
-                   JOIN Member M ON A.MemberId = M.MemberId
-                   WHERE M.TrainerId = %s
-                   ORDER BY A.Date DESC, A.CheckInTime DESC
-                   LIMIT 100''',
-                (trainer_id,),
-                silent=True
-            )
+            attendance = execute_query('CALL sp_get_attendance_for_trainer(%s)', (trainer_id,), silent=True)
         else:
-            # Admin can see all attendance
-            attendance = execute_query(
-                '''SELECT A.AttendanceId, A.MemberId, M.Name AS MemberName, 
-                          A.Date, A.CheckInTime, A.CheckOutTime,
-                          TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
-                   FROM Attendance A
-                   JOIN Member M ON A.MemberId = M.MemberId
-                   ORDER BY A.Date DESC, A.CheckInTime DESC
-                   LIMIT 100''',
-                silent=True
-            )
+            attendance = execute_query('CALL sp_get_attendance_all()', silent=True)
     except Exception as e:
         flash(f'Error loading attendance: {str(e)}', 'warning')
         attendance = []
@@ -552,60 +496,36 @@ def attendance_view():
 def membership_end_date():
     try:
         from datetime import date
-        
-        if session.get('role') == 'member':
-            # Member can only see their own membership end date
-            member_id = session.get('user_id')
-            result = execute_query(
-                '''SELECT M.MemberId, M.Name, M.Email, 
-                          fn_membership_end_date(M.MemberId) AS EndDate
-                   FROM Member M
-                   WHERE M.MemberId = %s''',
-                (member_id,),
-                silent=True
-            )
-        else:
-            # Admin can see all members' end dates
-            result = execute_query(
-                '''SELECT M.MemberId, M.Name, M.Email, 
-                          fn_membership_end_date(M.MemberId) AS EndDate
-                   FROM Member M
-                   ORDER BY M.Name''',
-                silent=True
-            )
-        
-        # Process results: convert dates and determine status
         today = date.today()
+
+        if session.get('role') == 'member':
+            member_id = session.get('user_id')
+            result = execute_query('CALL sp_get_membership_end_date_for_member(%s)', (member_id,), silent=True)
+        else:
+            result = execute_query('CALL sp_get_membership_end_dates()', silent=True)
+
         if result:
             for record in result:
                 end_date = record.get('EndDate')
                 if end_date:
-                    # Convert date object to string for display
                     if isinstance(end_date, date):
                         record['EndDateStr'] = end_date.isoformat()
-                    else:
-                        record['EndDateStr'] = str(end_date)
-                    
-                    # Determine status by comparing dates
-                    if isinstance(end_date, date):
                         record['Status'] = 'Active' if end_date >= today else 'Expired'
                     else:
-                        # If it's a string, parse it
                         try:
-                            end_date_obj = date.fromisoformat(str(end_date))
-                            record['Status'] = 'Active' if end_date_obj >= today else 'Expired'
-                            record['EndDateStr'] = end_date_obj.isoformat()
-                        except:
-                            record['Status'] = 'Unknown'
+                            parsed = date.fromisoformat(str(end_date))
+                            record['EndDateStr'] = parsed.isoformat()
+                            record['Status'] = 'Active' if parsed >= today else 'Expired'
+                        except Exception:
                             record['EndDateStr'] = str(end_date)
+                            record['Status'] = 'Unknown'
                 else:
                     record['EndDateStr'] = None
                     record['Status'] = 'No Membership'
-        
     except Exception as e:
         flash(f'Error loading membership data: {str(e)}', 'warning')
         result = []
-    
+
     return render_template('membership/end_date.html', memberships=result or [])
 
 
@@ -614,32 +534,14 @@ def membership_end_date():
 def membership_active_status():
     try:
         if session.get('role') == 'trainer':
-            # Trainer can only see assigned members' active status
             trainer_id = session.get('user_id')
-            result = execute_query(
-                '''SELECT M.MemberId, M.Name, M.Email,
-                          fn_is_member_active(M.MemberId) AS IsActive,
-                          fn_membership_end_date(M.MemberId) AS EndDate
-                   FROM Member M
-                   WHERE M.TrainerId = %s
-                   ORDER BY M.Name''',
-                (trainer_id,),
-                silent=True
-            )
+            result = execute_query('CALL sp_get_active_status_for_trainer(%s)', (trainer_id,), silent=True)
         else:
-            # Admin can see all members' active status
-            result = execute_query(
-                '''SELECT M.MemberId, M.Name, M.Email,
-                          fn_is_member_active(M.MemberId) AS IsActive,
-                          fn_membership_end_date(M.MemberId) AS EndDate
-                   FROM Member M
-                   ORDER BY M.Name''',
-                silent=True
-            )
+            result = execute_query('CALL sp_get_active_status_all()', silent=True)
     except Exception as e:
         flash(f'Error loading active status: {str(e)}', 'warning')
         result = []
-    
+
     return render_template('membership/active_status.html', members=result or [])
 
 
@@ -648,7 +550,7 @@ def membership_active_status():
 @role_required('admin')
 def equipment_list():
     try:
-        equipment = execute_query('SELECT * FROM Equipment ORDER BY EquipmentId', silent=True)
+        equipment = execute_query('CALL sp_list_equipment()', silent=True)
     except Exception as e:
         flash(f'Database error: {str(e)}', 'danger')
         equipment = []
@@ -660,15 +562,7 @@ def equipment_list():
 @role_required('admin', 'trainer')
 def exercises_list():
     try:
-        exercises = execute_query(
-            '''SELECT E.ExerciseId, E.ExerciseName, E.MuscleGroup,
-                      E.DefaultSets, E.DefaultReps, E.EquipmentId,
-                      EQ.Name AS EquipmentName
-               FROM Exercise E
-               LEFT JOIN Equipment EQ ON E.EquipmentId = EQ.EquipmentId
-               ORDER BY E.ExerciseName''',
-            silent=True
-        )
+        exercises = execute_query('CALL sp_list_exercises()', silent=True)
     except Exception as e:
         flash(f'Error loading exercises: {str(e)}', 'danger')
         exercises = []
@@ -712,5 +606,3 @@ def mysql_console():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 3000)), debug=True)
-
-
