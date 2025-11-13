@@ -11,8 +11,7 @@ A comprehensive database-driven web application for managing gym operations, inc
 - **Stored Procedures & Functions**: Business logic encapsulated in database routines
   - `sp_enroll_member_to_plan`: Enroll members to workout plans
   - `sp_make_payment`: Process payments with automatic audit
-  - `sp_log_workout`: Record workout sessions
-
+  - `sp_record_attendance` ⁠: Track member attendance
   - `fn_membership_end_date`: Calculate membership expiration
   - `fn_is_member_active`: Check member active status
 - **MySQL Console**: Admin can execute SQL queries directly from the UI
@@ -24,6 +23,11 @@ A comprehensive database-driven web application for managing gym operations, inc
   - Trainers can view their assigned members with contact details and plans
   - Members can view their assigned trainer and workout plans
 - **Enrollment System**: Trainers can enroll only their assigned members to workout plans
+- **Attendance Management**:
+  - Trainers can mark attendance only for their assigned members
+  - Admin can mark attendance for all members
+  - Automatic time validation (check-out must be after check-in)
+  - View attendance records with member details and duration
 - **ACID Compliance**: All database operations use transactions for data integrity
 
 ## Prerequisites
@@ -172,6 +176,10 @@ You'll be redirected to the login page.
   - Full member CRUD operations
   - Process payments for any member
   - Enroll members to plans
+  - Mark attendance for all members
+  - View attendance for all members
+  - View membership end dates for all members
+  - View active status for all members
   - MySQL console for direct SQL queries
   - View all payment audit trails
 
@@ -183,6 +191,7 @@ You'll be redirected to the login page.
   - View own payment history
   - View assigned trainer details
   - View assigned workout plans
+  - View own membership end date
 
 ### Trainer
 - **Email:** `rajesh@example.com`
@@ -191,6 +200,9 @@ You'll be redirected to the login page.
   - View assigned members with contact details
   - View members' assigned workout plans
   - Enroll only assigned members to workout plans
+  - Mark attendance for assigned members
+  - View attendance records for assigned members
+  - View active status for assigned members
 
 **Note:** Additional members and trainers are available in the seed data. Check the database for their emails:
 - Members: `priya.rao@example.com`, `karan.verma@example.com`, etc.
@@ -219,11 +231,17 @@ MINI-PROJECT/
 │   │   └── edit.html              # Edit member
 │   ├── actions/                    # Procedures/functions GUI
 │   │   ├── enroll.html            # Enroll member to plan
-│   │   └── make_payment.html      # Make payment
+│   │   ├── make_payment.html      # Make payment
+│   │   └── mark_attendance.html   # Mark attendance
 │   ├── trainer/                    # Trainer-specific pages
 │   │   └── members.html           # View assigned members
 │   ├── member/                     # Member-specific pages
 │   │   └── my_trainer.html         # View assigned trainer & plans
+│   ├── attendance/                 # Attendance pages
+│   │   └── view.html              # View attendance records
+│   ├── membership/                 # Membership function pages
+│   │   ├── end_date.html          # View membership end dates
+│   │   └── active_status.html     # View member active status
 │   ├── queries/                    # Query dashboard (if needed)
 │   │   └── index.html
 │   └── admin/                      # Admin-only pages
@@ -261,7 +279,6 @@ MINI-PROJECT/
 - **Procedures:** 
   - `sp_enroll_member_to_plan`: Enroll member to workout plan
   - `sp_make_payment`: Process payment with validation
-  - `sp_log_workout`: Record workout session
   - `sp_record_attendance`: Record member attendance
 - **Functions:** 
   - `fn_membership_end_date`: Calculate membership end date
@@ -284,6 +301,10 @@ MINI-PROJECT/
 - Member CRUD operations
 - Process payments for any member
 - Enroll any member to any plan
+- Mark attendance for all members
+- View attendance for all members
+- View membership end dates for all members
+- View active status for all members
 - MySQL console for direct SQL execution
 - View all payment audit trails
 
@@ -292,11 +313,15 @@ MINI-PROJECT/
 - View own payment history
 - View assigned trainer information
 - View assigned workout plans
+- View own membership end date
 
 ### Trainer
 - View assigned members with contact details
 - View members' assigned workout plans
 - Enroll only assigned members to workout plans
+- Mark attendance only for assigned members
+- View attendance records for assigned members
+- View active status for assigned members
 
 ## Key Functionality
 
@@ -314,6 +339,28 @@ MINI-PROJECT/
 ### Member-Trainer Relationship
 - **Trainer View**: See all assigned members with full contact details and their plans
 - **Member View**: See assigned trainer details and all assigned workout plans
+
+### Attendance System
+- **Time Validation**: Automatic validation ensures check-out time is after check-in time (enforced by database triggers)
+- **Role-Based Access**:
+  - Trainers can mark/view attendance only for members assigned to them
+  - Admin can mark/view attendance for all members
+- **Stored Procedure**: Uses `sp_record_attendance` for atomic attendance recording
+- **View Records**: Display attendance with member names, dates, times, and calculated duration
+
+### Membership Functions
+- **End Date Calculation** (`fn_membership_end_date`):
+  - Calculates membership expiration date based on last payment and package duration
+  - Returns NULL if member has no payment records
+  - Admin can view end dates for all members
+  - Members can view only their own end date
+  - Displays active/expired status based on current date
+- **Active Status Check** (`fn_is_member_active`):
+  - Checks if member has an active membership (end date >= today)
+  - Returns 1 for active, 0 for inactive or no membership
+  - Admin can view active status for all members
+  - Trainers can view active status for assigned members only
+  - Displays membership end date alongside status
 
 ## Troubleshooting
 

@@ -176,6 +176,7 @@ ALTER TABLE Attendance ADD CONSTRAINT uq_att_member_date UNIQUE (MemberId, Date)
 -- Positivity checks
 ALTER TABLE Package   ADD CONSTRAINT chk_pkg_price  CHECK (Price > 0);
 ALTER TABLE Package   ADD CONSTRAINT chk_pkg_weeks  CHECK (DurationWeeks > 0);
+ALTER TABLE WorkOutPlan ADD CONSTRAINT chk_plan_weeks CHECK (DurationWeeks > 0);
 ALTER TABLE Equipment ADD CONSTRAINT chk_equip_qty  CHECK (Quantity >= 0);
 ALTER TABLE WorkOutTracker ADD CONSTRAINT chk_sets_nonneg CHECK (SetsComplete >= 0);
 

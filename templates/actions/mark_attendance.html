@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3>Mark Attendance</h3>
+  </div>
+  <div class="card-body">
+    {% if not members or members|length == 0 %}
+    <div class="alert alert-warning">
+      <p><strong>No members available.</strong></p>
+      {% if session.role == 'trainer' %}
+      <p>You don't have any assigned members yet. Please contact admin to get members assigned to you.</p>
+      {% else %}
+      <p>No members found in the system.</p>
+      {% endif %}
+    </div>
+    {% else %}
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Member *</label>
+        <select name="member_id" class="form-select" required>
+          <option value="" disabled selected>-- Select Member --</option>
+          {% for m in members %}
+          <option value="{{ m.MemberId }}">{{ m.Name }} ({{ m.Email }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Date *</label>
+        <input type="date" name="date" class="form-control" value="{{ today }}" required>
+        <small class="text-muted form-text">Select the attendance date</small>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Check-In Time *</label>
+          <input type="time" name="check_in" class="form-control" required>
+          <small class="text-muted form-text">Member's check-in time</small>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Check-Out Time *</label>
+          <input type="time" name="check_out" class="form-control" required>
+          <small class="text-muted form-text">Member's check-out time (must be after check-in)</small>
+        </div>
+      </div>
+      <div class="alert alert-info">
+        <small><strong>Note:</strong> Check-out time must be after check-in time. The system will validate this automatically.</small>
+      </div>
+      <button type="submit" class="btn btn-success">Mark Attendance</button>
+      <a href="/attendance/view" class="btn btn-secondary ms-2">View Attendance</a>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

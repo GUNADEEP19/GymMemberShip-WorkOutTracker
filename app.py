@@ -440,6 +440,221 @@ def action_make_payment():
     return render_template('actions/make_payment.html', members=members, packages=packages, audits=audits, payment_modes=payment_modes)
 
 
+# ---------- Attendance Management ----------
+@app.route('/actions/mark_attendance', methods=['GET', 'POST'])
+@role_required('admin', 'trainer')
+def action_mark_attendance():
+    if request.method == 'POST':
+        try:
+            member_id = request.form.get('member_id')
+            date = request.form.get('date')
+            check_in = request.form.get('check_in')
+            check_out = request.form.get('check_out')
+            
+            # For trainers, verify they can only mark attendance for assigned members
+            if session.get('role') == 'trainer':
+                trainer_id = session.get('user_id')
+                member_check = execute_query(
+                    'SELECT MemberId FROM Member WHERE MemberId=%s AND TrainerId=%s',
+                    (member_id, trainer_id),
+                    silent=True
+                )
+                if not member_check:
+                    flash('You can only mark attendance for members assigned to you', 'danger')
+                    return redirect(url_for('action_mark_attendance'))
+            
+            # Use stored procedure to record attendance (triggers handle validation)
+            execute_query(
+                'CALL sp_record_attendance(%s,%s,%s,%s)',
+                (member_id, date, check_in, check_out),
+                commit=True
+            )
+            flash('Attendance recorded successfully', 'success')
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('action_mark_attendance'))
+    
+    try:
+        # Limit members based on role
+        if session.get('role') == 'trainer':
+            trainer_id = session.get('user_id')
+            members = execute_query(
+                'SELECT MemberId, Name, Email FROM Member WHERE TrainerId=%s ORDER BY Name',
+                (trainer_id,),
+                silent=True
+            )
+        else:
+            # Admin can see all members
+            members = execute_query('SELECT MemberId, Name, Email FROM Member ORDER BY Name', silent=True)
+    except Exception as e:
+        flash(f'Error loading members: {str(e)}', 'warning')
+        members = []
+    
+    # Get today's date for default value
+    from datetime import date
+    today = date.today().isoformat()
+    
+    return render_template('actions/mark_attendance.html', members=members, today=today)
+
+
+@app.route('/attendance/view')
+@role_required('admin', 'trainer')
+def attendance_view():
+    try:
+        if session.get('role') == 'trainer':
+            trainer_id = session.get('user_id')
+            # View attendance for assigned members only
+            attendance = execute_query(
+                '''SELECT A.AttendanceId, A.MemberId, M.Name AS MemberName, 
+                          A.Date, A.CheckInTime, A.CheckOutTime,
+                          TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
+                   FROM Attendance A
+                   JOIN Member M ON A.MemberId = M.MemberId
+                   WHERE M.TrainerId = %s
+                   ORDER BY A.Date DESC, A.CheckInTime DESC
+                   LIMIT 100''',
+                (trainer_id,),
+                silent=True
+            )
+        else:
+            # Admin can see all attendance
+            attendance = execute_query(
+                '''SELECT A.AttendanceId, A.MemberId, M.Name AS MemberName, 
+                          A.Date, A.CheckInTime, A.CheckOutTime,
+                          TIMESTAMPDIFF(MINUTE, A.CheckInTime, A.CheckOutTime) AS DurationMinutes
+                   FROM Attendance A
+                   JOIN Member M ON A.MemberId = M.MemberId
+                   ORDER BY A.Date DESC, A.CheckInTime DESC
+                   LIMIT 100''',
+                silent=True
+            )
+    except Exception as e:
+        flash(f'Error loading attendance: {str(e)}', 'warning')
+        attendance = []
+    
+    # Format duration for display
+    if attendance:
+        for record in attendance:
+            if record.get('DurationMinutes') is not None and record.get('CheckOutTime'):
+                minutes = record['DurationMinutes']
+                hours = minutes // 60
+                mins = minutes % 60
+                record['Duration'] = f"{hours}h {mins}m" if hours > 0 else f"{mins}m"
+            else:
+                record['Duration'] = '-'
+    
+    return render_template('attendance/view.html', attendance=attendance or [])
+
+
+# ---------- Stored Functions GUI ----------
+@app.route('/membership/end_date')
+@role_required('admin', 'member')
+def membership_end_date():
+    try:
+        from datetime import date
+        
+        if session.get('role') == 'member':
+            # Member can only see their own membership end date
+            member_id = session.get('user_id')
+            result = execute_query(
+                '''SELECT M.MemberId, M.Name, M.Email, 
+                          fn_membership_end_date(M.MemberId) AS EndDate
+                   FROM Member M
+                   WHERE M.MemberId = %s''',
+                (member_id,),
+                silent=True
+            )
+        else:
+            # Admin can see all members' end dates
+            result = execute_query(
+                '''SELECT M.MemberId, M.Name, M.Email, 
+                          fn_membership_end_date(M.MemberId) AS EndDate
+                   FROM Member M
+                   ORDER BY M.Name''',
+                silent=True
+            )
+        
+        # Process results: convert dates and determine status
+        today = date.today()
+        if result:
+            for record in result:
+                end_date = record.get('EndDate')
+                if end_date:
+                    # Convert date object to string for display
+                    if isinstance(end_date, date):
+                        record['EndDateStr'] = end_date.isoformat()
+                    else:
+                        record['EndDateStr'] = str(end_date)
+                    
+                    # Determine status by comparing dates
+                    if isinstance(end_date, date):
+                        record['Status'] = 'Active' if end_date >= today else 'Expired'
+                    else:
+                        # If it's a string, parse it
+                        try:
+                            end_date_obj = date.fromisoformat(str(end_date))
+                            record['Status'] = 'Active' if end_date_obj >= today else 'Expired'
+                            record['EndDateStr'] = end_date_obj.isoformat()
+                        except:
+                            record['Status'] = 'Unknown'
+                            record['EndDateStr'] = str(end_date)
+                else:
+                    record['EndDateStr'] = None
+                    record['Status'] = 'No Membership'
+        
+    except Exception as e:
+        flash(f'Error loading membership data: {str(e)}', 'warning')
+        result = []
+    
+    return render_template('membership/end_date.html', memberships=result or [])
+
+
+@app.route('/membership/active_status')
+@role_required('admin', 'trainer')
+def membership_active_status():
+    try:
+        if session.get('role') == 'trainer':
+            # Trainer can only see assigned members' active status
+            trainer_id = session.get('user_id')
+            result = execute_query(
+                '''SELECT M.MemberId, M.Name, M.Email,
+                          fn_is_member_active(M.MemberId) AS IsActive,
+                          fn_membership_end_date(M.MemberId) AS EndDate
+                   FROM Member M
+                   WHERE M.TrainerId = %s
+                   ORDER BY M.Name''',
+                (trainer_id,),
+                silent=True
+            )
+        else:
+            # Admin can see all members' active status
+            result = execute_query(
+                '''SELECT M.MemberId, M.Name, M.Email,
+                          fn_is_member_active(M.MemberId) AS IsActive,
+                          fn_membership_end_date(M.MemberId) AS EndDate
+                   FROM Member M
+                   ORDER BY M.Name''',
+                silent=True
+            )
+    except Exception as e:
+        flash(f'Error loading active status: {str(e)}', 'warning')
+        result = []
+    
+    return render_template('membership/active_status.html', members=result or [])
+
+
+# ---------- Equipment View (Admin only) ----------
+@app.route('/equipment')
+@role_required('admin')
+def equipment_list():
+    try:
+        equipment = execute_query('SELECT * FROM Equipment ORDER BY EquipmentId', silent=True)
+    except Exception as e:
+        flash(f'Database error: {str(e)}', 'danger')
+        equipment = []
+    return render_template('equipment/list.html', equipment=equipment or [])
+
+
 # ---------- MySQL Console (Admin only) ----------
 @app.route('/mysql-console', methods=['GET', 'POST'])
 @role_required('admin')

@@ -53,31 +53,9 @@ BEGIN
 END//
 DELIMITER ;
 
--- 3.2 WorkoutTracker trigger (validate sets on INSERT and UPDATE)
-DELIMITER //
-CREATE TRIGGER trg_workout_validate
-BEFORE INSERT ON WorkOutTracker
-FOR EACH ROW
-BEGIN
-  IF NEW.SetsComplete < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SetsComplete cannot be negative';
-  END IF;
-  SET NEW.Status = CONCAT(UCASE(LEFT(NEW.Status,1)), LCASE(SUBSTRING(NEW.Status,2)));
-END//
-DELIMITER ;
-
--- 3.2b WorkoutTracker UPDATE trigger (validate sets on update)
-DELIMITER //
-CREATE TRIGGER trg_workout_validate_upd
-BEFORE UPDATE ON WorkOutTracker
-FOR EACH ROW
-BEGIN
-  IF NEW.SetsComplete < 0 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='SetsComplete cannot be negative';
-  END IF;
-  SET NEW.Status = CONCAT(UCASE(LEFT(NEW.Status,1)), LCASE(SUBSTRING(NEW.Status,2)));
-END//
-DELIMITER ;
+-- 3.2 WorkoutTracker trigger removed
+-- SetsComplete validation is handled by CHECK constraint (chk_sets_nonneg)
+-- Status capitalization removed as it's not critical for business logic
 
 -- 3.3 Payment trigger (validate before insert, audit after)
 -- Validation trigger (BEFORE INSERT to prevent invalid data)
@@ -191,33 +169,7 @@ END//
 DELIMITER ;
 
 
--- 4.2 Log a workout entry (atomic, uses AUTO_INCREMENT)
-DELIMITER //
-CREATE PROCEDURE sp_log_workout(
-  IN p_member INT, IN p_plan INT, IN p_exercise INT,
-  IN p_sets INT, IN p_notes TEXT, IN p_date DATE)
-BEGIN
-  DECLARE EXIT HANDLER FOR SQLEXCEPTION
-  BEGIN
-    ROLLBACK;
-    RESIGNAL;
-  END;
-  
-  START TRANSACTION;
-  INSERT INTO WorkOutTracker(
-    DateLogged, Status, Day, WeekNumber, SetsComplete, Notes,
-    MemberId, PlanId, ExerciseId
-  )
-  VALUES(
-    p_date, 'Completed', DAYNAME(p_date), WEEK(p_date,1),
-    p_sets, p_notes, p_member, p_plan, p_exercise
-  );
-  COMMIT;
-END//
-DELIMITER ;
-
-
--- 4.3 Record attendance (atomic, uses AUTO_INCREMENT)
+-- 4.2 Record attendance (atomic, uses AUTO_INCREMENT)
 DELIMITER //
 CREATE PROCEDURE sp_record_attendance(
   IN p_member INT, IN p_date DATE,
@@ -237,7 +189,7 @@ END//
 DELIMITER ;
 
 
--- 4.4 Make a payment (atomic, uses AUTO_INCREMENT, triggers handle validation & audit)
+-- 4.3 Make a payment (atomic, uses AUTO_INCREMENT, triggers handle validation & audit)
 DELIMITER //
 CREATE PROCEDURE sp_make_payment(
   IN p_member INT, IN p_package INT, IN p_amount DECIMAL(8,2), IN p_mode VARCHAR(50))
@@ -337,7 +289,6 @@ SELECT * FROM Payment_Audit;
 
 -- (C) Procedure & Function demo
 CALL sp_enroll_member_to_plan(1,1);
-CALL sp_log_workout(1,1,2,3,'Proc inserted workout','2025-05-07');
 
 SELECT fn_membership_end_date(1)   AS EndDate,
        fn_is_member_active(1)      AS ActiveStatus,

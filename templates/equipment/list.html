@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3 class="mb-0">Equipment Inventory</h3>
+  </div>
+  <div class="card-body">
+    {% if equipment %}
+    <div class="table-responsive">
+      <table class="table table-striped table-hover table-bordered">
+        <thead class="table-dark">
+          <tr>
+            <th>Equipment ID</th>
+            <th>Name</th>
+            <th>Quantity</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for eq in equipment %}
+          <tr>
+            <td><strong>{{ eq.EquipmentId }}</strong></td>
+            <td>{{ eq.Name }}</td>
+            <td>
+              <span class="fw-bold">{{ eq.Quantity }}</span>
+            </td>
+            <td>
+              {% if eq.Quantity == 0 %}
+                <span class="badge bg-danger">Out of Stock</span>
+              {% elif eq.Quantity < 3 %}
+                <span class="badge bg-warning">Low Stock</span>
+              {% else %}
+                <span class="badge bg-success">In Stock</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info mb-0">No equipment found in inventory.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

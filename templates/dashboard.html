@@ -21,6 +21,15 @@
         <div class="col-md-6 col-lg-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
+              <h5 class="card-title text-info">🏋️ Equipment Inventory</h5>
+              <p class="card-text text-muted">View gym equipment and stock levels.</p>
+              <a href="/equipment" class="btn btn-info text-white w-100">View Equipment</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
               <h5 class="card-title text-success">📋 Enroll Members</h5>
               <p class="card-text text-muted">Assign workout plans to members.</p>
               <a href="/actions/enroll" class="btn btn-success w-100">Enroll</a>
@@ -39,6 +48,42 @@
         <div class="col-md-6 col-lg-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
+              <h5 class="card-title text-warning">✅ Mark Attendance</h5>
+              <p class="card-text text-muted">Record member attendance.</p>
+              <a href="/actions/mark_attendance" class="btn btn-warning text-white w-100">Mark Attendance</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title text-secondary">📊 View Attendance</h5>
+              <p class="card-text text-muted">View all attendance records.</p>
+              <a href="/attendance/view" class="btn btn-secondary w-100">View Attendance</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title text-primary">📅 Membership End Dates</h5>
+              <p class="card-text text-muted">View membership expiration dates.</p>
+              <a href="/membership/end_date" class="btn btn-primary w-100">View End Dates</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title text-success">✅ Active Status</h5>
+              <p class="card-text text-muted">Check member active status.</p>
+              <a href="/membership/active_status" class="btn btn-success w-100">View Status</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
               <h5 class="card-title text-dark">⚡ MySQL Console</h5>
               <p class="card-text text-muted">Execute SQL queries directly.</p>
               <a href="/mysql-console" class="btn btn-dark w-100">Console</a>
@@ -48,7 +93,7 @@
       </div>
     {% elif role == 'member' %}
       <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body text-center">
               <h5 class="card-title text-info">💳 Make Payment</h5>
@@ -57,7 +102,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body text-center">
               <h5 class="card-title text-primary">👨‍🏫 My Trainer & Plans</h5>
@@ -66,10 +111,19 @@
             </div>
           </div>
         </div>
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-success">📅 Membership End Date</h5>
+              <p class="card-text text-muted">Check your membership expiration date.</p>
+              <a href="/membership/end_date" class="btn btn-success btn-lg w-100">View End Date</a>
+            </div>
+          </div>
+        </div>
       </div>
     {% elif role == 'trainer' %}
       <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-md-6 col-lg-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body text-center">
               <h5 class="card-title text-success">📋 Enroll Member</h5>
@@ -78,12 +132,39 @@
             </div>
           </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 col-lg-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body text-center">
               <h5 class="card-title text-primary">👥 My Members</h5>
               <p class="card-text text-muted">View your assigned members and their plans.</p>
               <a href="/trainer/members" class="btn btn-primary btn-lg w-100">View Members</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-warning">✅ Mark Attendance</h5>
+              <p class="card-text text-muted">Record attendance for assigned members.</p>
+              <a href="/actions/mark_attendance" class="btn btn-warning text-white btn-lg w-100">Mark Attendance</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-secondary">📊 View Attendance</h5>
+              <p class="card-text text-muted">View attendance records for assigned members.</p>
+              <a href="/attendance/view" class="btn btn-secondary btn-lg w-100">View Attendance</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title text-info">✅ Active Status</h5>
+              <p class="card-text text-muted">Check active status of assigned members.</p>
+              <a href="/membership/active_status" class="btn btn-info text-white btn-lg w-100">View Status</a>
             </div>
           </div>
         </div>
