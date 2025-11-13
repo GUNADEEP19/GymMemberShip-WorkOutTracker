@@ -12,7 +12,7 @@ A comprehensive database-driven web application for managing gym operations, inc
   - `sp_enroll_member_to_plan`: Enroll members to workout plans
   - `sp_make_payment`: Process payments with automatic audit
   - `sp_log_workout`: Record workout sessions
-  - `sp_record_attendance`: Track member attendance
+
   - `fn_membership_end_date`: Calculate membership expiration
   - `fn_is_member_active`: Check member active status
 - **MySQL Console**: Admin can execute SQL queries directly from the UI
