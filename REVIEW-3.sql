@@ -342,5 +342,3 @@ CALL sp_log_workout(1,1,2,3,'Proc inserted workout','2025-05-07');
 SELECT fn_membership_end_date(1)   AS EndDate,
        fn_is_member_active(1)      AS ActiveStatus,
        fn_total_workouts(1)        AS TotalWorkouts;
-
-

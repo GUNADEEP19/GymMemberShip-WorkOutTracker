@@ -301,5 +301,3 @@ UNION ALL SELECT 'Member_WorkOutPlan', COUNT(*) FROM Member_WorkOutPlan
 UNION ALL SELECT 'WorkOutTracker', COUNT(*) FROM WorkOutTracker
 UNION ALL SELECT 'Attendance', COUNT(*) FROM Attendance
 UNION ALL SELECT 'Payment', COUNT(*) FROM Payment;
-
-

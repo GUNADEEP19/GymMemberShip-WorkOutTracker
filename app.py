@@ -475,43 +475,6 @@ def mysql_console():
     return render_template('admin/mysql_console.html', results=results, error=error, query_executed=query_executed)
 
 
-# ---------- DB Users (real MySQL users with varied privileges) ----------
-@app.route('/db-users', methods=['GET', 'POST'])
-@role_required('admin')
-def db_users():
-    result = None
-    error = None
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        role = request.form['db_role']  # admin/app_user/trainer_user
-        host = request.form.get('host', '%')
-        db = os.getenv('DB_NAME', 'GymMemberShip_WorkOutTracker')
-        try:
-            # Create user
-            execute_query(f"CREATE USER IF NOT EXISTS `{username}`@`{host}` IDENTIFIED BY %s", (password,), commit=True)
-            # Revoke all first (idempotent try)
-            try:
-                execute_query(f"REVOKE ALL PRIVILEGES, GRANT OPTION FROM `{username}`@`{host}`", commit=True)
-            except Exception:
-                pass
-            # Grant per role
-            if role == 'admin':
-                execute_query(f"GRANT ALL PRIVILEGES ON `{db}`.* TO `{username}`@`{host}`", commit=True)
-            elif role == 'app_user':
-                execute_query(f"GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON `{db}`.* TO `{username}`@`{host}`", commit=True)
-            elif role == 'trainer_user':
-                # trainer: read most data + execute routines
-                execute_query(f"GRANT SELECT, EXECUTE ON `{db}`.* TO `{username}`@`{host}`", commit=True)
-            execute_query("FLUSH PRIVILEGES", commit=True)
-            result = 'User/privileges updated'
-            flash(result, 'success')
-        except Exception as e:
-            error = str(e)
-            flash(error, 'danger')
-    return render_template('admin/db_users.html', result=result, error=error)
-
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 3000)), debug=True)
 
