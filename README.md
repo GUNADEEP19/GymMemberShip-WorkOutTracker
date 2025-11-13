@@ -28,6 +28,9 @@ A comprehensive database-driven web application for managing gym operations, inc
   - Admin can mark attendance for all members
   - Automatic time validation (check-out must be after check-in)
   - View attendance records with member details and duration
+- **Exercise Library**:
+  - Trainers and admins can browse all exercises with default sets/reps
+  - Shows associated equipment (or bodyweight) for each exercise
 - **ACID Compliance**: All database operations use transactions for data integrity
 
 ## Prerequisites
@@ -242,6 +245,10 @@ MINI-PROJECT/
 │   ├── membership/                 # Membership function pages
 │   │   ├── end_date.html          # View membership end dates
 │   │   └── active_status.html     # View member active status
+│   ├── equipment/                  # Equipment inventory pages
+│   │   └── list.html              # View equipment stock levels
+│   ├── exercise/                   # Exercise library pages
+│   │   └── list.html              # View exercises and equipment
 │   ├── queries/                    # Query dashboard (if needed)
 │   │   └── index.html
 │   └── admin/                      # Admin-only pages
@@ -260,10 +267,9 @@ MINI-PROJECT/
 6. **Member** - Gym members with personal and contact details
 7. **WorkOutPlan** - Workout programs created by trainers
 8. **Member_WorkOutPlan** - Junction table for member-plan assignments
-9. **WorkOutTracker** - Daily workout logs and progress
-10. **Attendance** - Member attendance records with check-in/out times
-11. **Payment** - Payment transactions (audited via triggers)
-12. **Payment_Audit** - Audit trail for all payment operations
+9. **Attendance** - Member attendance records with check-in/out times
+10. **Payment** - Payment transactions (audited via triggers)
+11. **Payment_Audit** - Audit trail for all payment operations
 
 ### Key Features
 - **Foreign Keys:** Proper referential integrity with CASCADE/RESTRICT/SET NULL actions
@@ -275,15 +281,6 @@ MINI-PROJECT/
   - Payment validation (amount must match package price)
   - Payment audit logging (INSERT, UPDATE, DELETE)
   - Attendance time validation
-  - Workout sets validation
-- **Procedures:** 
-  - `sp_enroll_member_to_plan`: Enroll member to workout plan
-  - `sp_make_payment`: Process payment with validation
-  - `sp_record_attendance`: Record member attendance
-- **Functions:** 
-  - `fn_membership_end_date`: Calculate membership end date
-  - `fn_is_member_active`: Check if member has active membership
-- **Indexes:** Optimized indexes on frequently queried columns
 
 ## Technologies Used
 
@@ -305,6 +302,8 @@ MINI-PROJECT/
 - View attendance for all members
 - View membership end dates for all members
 - View active status for all members
+- View equipment inventory
+- Browse exercise library with equipment details
 - MySQL console for direct SQL execution
 - View all payment audit trails
 
@@ -361,6 +360,12 @@ MINI-PROJECT/
   - Admin can view active status for all members
   - Trainers can view active status for assigned members only
   - Displays membership end date alongside status
+
+### Exercise Library
+- **Comprehensive List**: Shows all exercises with muscle group, default sets/reps
+- **Equipment Mapping**: Highlights required equipment (or bodyweight)
+- **Access Control**: Available to trainers and admins from dashboards and navigation
+- **Inventory Integration**: Links with equipment data to monitor usage
 
 ## Troubleshooting
 

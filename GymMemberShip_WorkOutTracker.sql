@@ -86,20 +86,6 @@ CREATE TABLE Member_WorkOutPlan (
   PRIMARY KEY (MemberId, PlanId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Daily workout log
-CREATE TABLE WorkOutTracker (
-  TrackerId INT PRIMARY KEY AUTO_INCREMENT,
-  DateLogged DATE,
-  Status VARCHAR(50),
-  Day VARCHAR(20),
-  WeekNumber INT,
-  SetsComplete INT,
-  Notes TEXT,
-  MemberId INT,
-  PlanId INT,
-  ExerciseId INT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Daily attendance
 CREATE TABLE Attendance (
   AttendanceId INT PRIMARY KEY AUTO_INCREMENT,
@@ -145,14 +131,6 @@ ALTER TABLE Member_WorkOutPlan
   ADD CONSTRAINT fk_mw_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId)
     ON UPDATE CASCADE ON DELETE CASCADE;
 
-ALTER TABLE WorkOutTracker
-  ADD CONSTRAINT fk_tracker_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-  ADD CONSTRAINT fk_tracker_plan FOREIGN KEY (PlanId) REFERENCES WorkOutPlan(PlanId)
-    ON UPDATE CASCADE ON DELETE CASCADE,
-  ADD CONSTRAINT fk_tracker_exercise FOREIGN KEY (ExerciseId) REFERENCES Exercise(ExerciseId)
-    ON UPDATE CASCADE ON DELETE RESTRICT;
-
 ALTER TABLE Attendance
   ADD CONSTRAINT fk_att_member FOREIGN KEY (MemberId) REFERENCES Member(MemberId)
     ON UPDATE CASCADE ON DELETE RESTRICT;
@@ -178,13 +156,10 @@ ALTER TABLE Package   ADD CONSTRAINT chk_pkg_price  CHECK (Price > 0);
 ALTER TABLE Package   ADD CONSTRAINT chk_pkg_weeks  CHECK (DurationWeeks > 0);
 ALTER TABLE WorkOutPlan ADD CONSTRAINT chk_plan_weeks CHECK (DurationWeeks > 0);
 ALTER TABLE Equipment ADD CONSTRAINT chk_equip_qty  CHECK (Quantity >= 0);
-ALTER TABLE WorkOutTracker ADD CONSTRAINT chk_sets_nonneg CHECK (SetsComplete >= 0);
 
 -- Helpful indexes for joins/lookups
 CREATE INDEX ix_member_package   ON Member(PackageId);
 CREATE INDEX ix_member_trainer   ON Member(TrainerId);
-CREATE INDEX ix_tracker_member   ON WorkOutTracker(MemberId);
-CREATE INDEX ix_tracker_plan     ON WorkOutTracker(PlanId);
 CREATE INDEX ix_payment_member   ON Payment(MemberId);
 CREATE INDEX ix_payment_package  ON Payment(PackageId);
 CREATE INDEX ix_exercise_equipment ON Exercise(EquipmentId);
@@ -252,14 +227,6 @@ INSERT INTO Member_WorkOutPlan VALUES
 (4, 5),
 (5, 4);
 
--- WorkOutTracker
-INSERT INTO WorkOutTracker VALUES
-(1, '2025-05-01', 'Completed', 'Monday', 1, 4, 'Good session', 1, 1, 1),
-(2, '2025-05-02', 'Completed', 'Tuesday', 1, 3, 'Felt strong', 2, 2, 2),
-(3, '2025-05-03', 'Skipped',   'Wednesday', 1, 0, 'Felt sick', 3, 3, 3),
-(4, '2025-05-04', 'Completed', 'Thursday', 1, 2, 'Light cardio', 4, 5, 4),
-(5, '2025-05-05', 'Completed', 'Friday', 1, 3, 'Good form', 5, 4, 5);
-
 -- Attendance
 INSERT INTO Attendance VALUES
 (1, 1, '2025-05-01', '07:30:00', '08:30:00'),
@@ -286,7 +253,6 @@ DESC Exercise;
 DESC Member;
 DESC WorkOutPlan;
 DESC Member_WorkOutPlan;
-DESC WorkOutTracker;
 DESC Attendance;
 DESC Payment;
 
@@ -299,6 +265,5 @@ UNION ALL SELECT 'Equipment', COUNT(*) FROM Equipment
 UNION ALL SELECT 'Exercise', COUNT(*) FROM Exercise
 UNION ALL SELECT 'WorkOutPlan', COUNT(*) FROM WorkOutPlan
 UNION ALL SELECT 'Member_WorkOutPlan', COUNT(*) FROM Member_WorkOutPlan
-UNION ALL SELECT 'WorkOutTracker', COUNT(*) FROM WorkOutTracker
 UNION ALL SELECT 'Attendance', COUNT(*) FROM Attendance
 UNION ALL SELECT 'Payment', COUNT(*) FROM Payment;

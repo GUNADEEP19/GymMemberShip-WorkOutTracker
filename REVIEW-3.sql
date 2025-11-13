@@ -252,19 +252,6 @@ BEGIN
 END//
 DELIMITER ;
 
--- 5.3 Count completed workouts
-DELIMITER //
-CREATE FUNCTION fn_total_workouts(p_member INT)
-RETURNS INT
-READS SQL DATA
-BEGIN
-  DECLARE v_cnt INT;
-  SELECT COUNT(*) INTO v_cnt FROM WorkOutTracker
-  WHERE MemberId=p_member AND Status='Completed';
-  RETURN COALESCE(v_cnt,0);
-END//
-DELIMITER ;
-
 
 -- STEP 6 — DEMONSTRATE
 -- (A) Test triggers
@@ -291,5 +278,4 @@ SELECT * FROM Payment_Audit;
 CALL sp_enroll_member_to_plan(1,1);
 
 SELECT fn_membership_end_date(1)   AS EndDate,
-       fn_is_member_active(1)      AS ActiveStatus,
-       fn_total_workouts(1)        AS TotalWorkouts;
+       fn_is_member_active(1)      AS ActiveStatus;

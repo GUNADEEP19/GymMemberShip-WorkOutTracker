@@ -74,6 +74,7 @@
               {% endif %}
               {% if session.role == 'trainer' %}
                 <li class="nav-item"><a class="nav-link" href="/trainer/members">My Members</a></li>
+                <li class="nav-item"><a class="nav-link" href="/exercises">Exercises</a></li>
               {% endif %}
               {% if session.role == 'member' %}
                 <li class="nav-item"><a class="nav-link" href="/member/my-trainer">My Trainer</a></li>
@@ -81,6 +82,7 @@
               {% if session.role == 'admin' %}
                 <li class="nav-item"><a class="nav-link" href="/members">Members</a></li>
                 <li class="nav-item"><a class="nav-link" href="/equipment">Equipment</a></li>
+                <li class="nav-item"><a class="nav-link" href="/exercises">Exercises</a></li>
                 <li class="nav-item"><a class="nav-link" href="/mysql-console">MySQL Console</a></li>
               {% endif %}
               <li class="nav-item ms-2"><a class="btn btn-danger text-white" href="/logout" style="text-decoration: none; padding: 0.375rem 0.75rem;">Logout ({{ session.user_name or session.role }})</a></li>

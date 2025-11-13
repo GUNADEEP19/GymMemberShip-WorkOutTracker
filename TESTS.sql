@@ -67,23 +67,19 @@ BEGIN
     INSERT INTO TestResults VALUES('T3_Attendance_Unique_Per_Day', 0, 'Duplicate allowed', NOW());
   END;
 
-  -- Test 4: CASCADE on WorkOutPlan -> Member_WorkOutPlan + WorkOutTracker
+  -- Test 4: CASCADE on WorkOutPlan -> Member_WorkOutPlan
   BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'Setup failed', NOW()); END;
     START TRANSACTION;
-    -- setup: new plan, map to member, add tracker row
+    -- setup: new plan, map to member
     INSERT INTO WorkOutPlan(DurationWeeks, Goal, TrainerId) VALUES(1, 'Test Cascade', NULL);
     SET @plan_id = LAST_INSERT_ID();
     INSERT INTO Member_WorkOutPlan(MemberId, PlanId) VALUES(1, @plan_id);
-    INSERT INTO WorkOutTracker(DateLogged, Status, Day, WeekNumber, SetsComplete, Notes, MemberId, PlanId, ExerciseId)
-    VALUES(CURDATE(), 'Completed', DAYNAME(CURDATE()), WEEK(CURDATE(),1), 1, 'T4', 1, @plan_id, 1);
     -- delete parent
     DELETE FROM WorkOutPlan WHERE PlanId=@plan_id;
-    -- verify children gone
+    -- verify child gone
     SELECT COUNT(*) INTO v_cnt FROM Member_WorkOutPlan WHERE PlanId=@plan_id;
     IF v_cnt <> 0 THEN INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'Member_WorkOutPlan not cascaded', NOW()); ROLLBACK; LEAVE _t4; END IF;
-    SELECT COUNT(*) INTO v_cnt FROM WorkOutTracker WHERE PlanId=@plan_id;
-    IF v_cnt <> 0 THEN INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'WorkOutTracker not cascaded', NOW()); ROLLBACK; LEAVE _t4; END IF;
     INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 1, 'Cascaded correctly', NOW());
     ROLLBACK;
   END;

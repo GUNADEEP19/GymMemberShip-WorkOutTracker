@@ -655,6 +655,26 @@ def equipment_list():
     return render_template('equipment/list.html', equipment=equipment or [])
 
 
+# ---------- Exercise Library (Admin & Trainer) ----------
+@app.route('/exercises')
+@role_required('admin', 'trainer')
+def exercises_list():
+    try:
+        exercises = execute_query(
+            '''SELECT E.ExerciseId, E.ExerciseName, E.MuscleGroup,
+                      E.DefaultSets, E.DefaultReps, E.EquipmentId,
+                      EQ.Name AS EquipmentName
+               FROM Exercise E
+               LEFT JOIN Equipment EQ ON E.EquipmentId = EQ.EquipmentId
+               ORDER BY E.ExerciseName''',
+            silent=True
+        )
+    except Exception as e:
+        flash(f'Error loading exercises: {str(e)}', 'danger')
+        exercises = []
+    return render_template('exercise/list.html', exercises=exercises or [])
+
+
 # ---------- MySQL Console (Admin only) ----------
 @app.route('/mysql-console', methods=['GET', 'POST'])
 @role_required('admin')
