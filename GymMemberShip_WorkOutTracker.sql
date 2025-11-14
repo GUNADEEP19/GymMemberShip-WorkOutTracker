@@ -86,13 +86,13 @@ CREATE TABLE Member_WorkOutPlan (
   PRIMARY KEY (MemberId, PlanId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Daily attendance
+-- Daily attendance (Weak Entity: discriminator is Date, PK is (MemberId, Date))
 CREATE TABLE Attendance (
-  AttendanceId INT PRIMARY KEY AUTO_INCREMENT,
   MemberId INT,
   Date DATE,
   CheckInTime TIME,
-  CheckOutTime TIME
+  CheckOutTime TIME,
+  PRIMARY KEY (MemberId, Date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Payments made for packages (audited via triggers)
@@ -148,8 +148,7 @@ ALTER TABLE Member  ADD CONSTRAINT uq_member_phone  UNIQUE (PhoneNo);
 ALTER TABLE Trainer ADD CONSTRAINT uq_trainer_email UNIQUE (Email);
 ALTER TABLE Trainer ADD CONSTRAINT uq_trainer_phone UNIQUE (PhoneNo);
 
--- Attendance: one record per member per date
-ALTER TABLE Attendance ADD CONSTRAINT uq_att_member_date UNIQUE (MemberId, Date);
+-- Attendance: one record per member per date (enforced by composite PRIMARY KEY)
 
 -- Positivity checks
 ALTER TABLE Package   ADD CONSTRAINT chk_pkg_price  CHECK (Price > 0);
@@ -163,7 +162,7 @@ CREATE INDEX ix_member_trainer   ON Member(TrainerId);
 CREATE INDEX ix_payment_member   ON Payment(MemberId);
 CREATE INDEX ix_payment_package  ON Payment(PackageId);
 CREATE INDEX ix_exercise_equipment ON Exercise(EquipmentId);
-CREATE INDEX ix_att_member       ON Attendance(MemberId);
+-- Note: Attendance(MemberId) is automatically indexed as part of composite PK (MemberId, Date)
 
 
 -- Seed data: explicit IDs work with AUTO_INCREMENT (MySQL auto-adjusts counter)
@@ -227,13 +226,13 @@ INSERT INTO Member_WorkOutPlan VALUES
 (4, 5),
 (5, 4);
 
--- Attendance
-INSERT INTO Attendance VALUES
-(1, 1, '2025-05-01', '07:30:00', '08:30:00'),
-(2, 2, '2025-05-02', '18:00:00', '19:15:00'),
-(3, 3, '2025-05-03', '06:45:00', '07:30:00'),
-(4, 4, '2025-05-04', '17:20:00', '18:05:00'),
-(5, 5, '2025-05-05', '07:00:00', '07:45:00');
+-- Attendance (Weak Entity: PK is (MemberId, Date))
+INSERT INTO Attendance (MemberId, Date, CheckInTime, CheckOutTime) VALUES
+(1, '2025-05-01', '07:30:00', '08:30:00'),
+(2, '2025-05-02', '18:00:00', '19:15:00'),
+(3, '2025-05-03', '06:45:00', '07:30:00'),
+(4, '2025-05-04', '17:20:00', '18:05:00'),
+(5, '2025-05-05', '07:00:00', '07:45:00');
 
 -- Payment
 INSERT INTO Payment VALUES

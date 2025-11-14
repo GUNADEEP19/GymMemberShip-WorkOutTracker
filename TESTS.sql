@@ -54,13 +54,13 @@ BEGIN
     ROLLBACK; -- non-destructive
   END;
 
-  -- Test 3: Attendance one per day per member (unique key)
+  -- Test 3: Attendance one per day per member (composite PRIMARY KEY enforces uniqueness)
   BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; INSERT INTO TestResults VALUES('T3_Attendance_Unique_Per_Day', 1, 'Duplicate blocked', NOW()); END;
     START TRANSACTION;
     INSERT INTO Attendance(MemberId, Date, CheckInTime, CheckOutTime)
     VALUES(1, '2099-01-01', '07:00:00', '08:00:00');
-    -- second insert same day should fail
+    -- second insert same day should fail (composite PK violation)
     INSERT INTO Attendance(MemberId, Date, CheckInTime, CheckOutTime)
     VALUES(1, '2099-01-01', '09:00:00', '10:00:00');
     ROLLBACK;
@@ -68,7 +68,7 @@ BEGIN
   END;
 
   -- Test 4: CASCADE on WorkOutPlan -> Member_WorkOutPlan
-  BEGIN
+  _t4: BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION BEGIN ROLLBACK; INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'Setup failed', NOW()); END;
     START TRANSACTION;
     -- setup: new plan, map to member
@@ -79,10 +79,14 @@ BEGIN
     DELETE FROM WorkOutPlan WHERE PlanId=@plan_id;
     -- verify child gone
     SELECT COUNT(*) INTO v_cnt FROM Member_WorkOutPlan WHERE PlanId=@plan_id;
-    IF v_cnt <> 0 THEN INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'Member_WorkOutPlan not cascaded', NOW()); ROLLBACK; LEAVE _t4; END IF;
+    IF v_cnt <> 0 THEN 
+      INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 0, 'Member_WorkOutPlan not cascaded', NOW()); 
+      ROLLBACK; 
+      LEAVE _t4; 
+    END IF;
     INSERT INTO TestResults VALUES('T4_Cascade_Delete_Plan', 1, 'Cascaded correctly', NOW());
     ROLLBACK;
-  END;
+  END _t4;
 
   -- Test 5: RESTRICT delete Member with Payment should fail
   BEGIN

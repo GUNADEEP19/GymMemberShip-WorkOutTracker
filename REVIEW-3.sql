@@ -517,12 +517,11 @@ BEGIN
 END//
 DELIMITER ;
 
--- 4.6 Attendance queries
+-- 4.6 Attendance queries (Weak Entity: PK is (MemberId, Date))
 DELIMITER //
 CREATE PROCEDURE sp_get_attendance_all()
 BEGIN
-  SELECT A.AttendanceId,
-         A.MemberId,
+  SELECT A.MemberId,
          M.Name AS MemberName,
          A.Date,
          A.CheckInTime,
@@ -538,8 +537,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE sp_get_attendance_for_trainer(IN p_trainer INT)
 BEGIN
-  SELECT A.AttendanceId,
-         A.MemberId,
+  SELECT A.MemberId,
          M.Name AS MemberName,
          A.Date,
          A.CheckInTime,

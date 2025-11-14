@@ -267,7 +267,7 @@ MINI-PROJECT/
 6. **Member** - Gym members with personal and contact details
 7. **WorkOutPlan** - Workout programs created by trainers
 8. **Member_WorkOutPlan** - Junction table for member-plan assignments
-9. **Attendance** - Member attendance records with check-in/out times
+9. **Attendance** - Member attendance records with check-in/out times (Weak Entity: discriminator is Date, PK is (MemberId, Date))
 10. **Payment** - Payment transactions (audited via triggers)
 11. **Payment_Audit** - Audit trail for all payment operations
 
@@ -276,7 +276,7 @@ MINI-PROJECT/
 - **Constraints:** 
   - UNIQUE constraints on email and phone for Member and Trainer
   - CHECK constraints for positive prices, durations, and quantities
-  - UNIQUE constraint on (MemberId, Date) for Attendance
+  - Composite PRIMARY KEY (MemberId, Date) for Attendance (Weak Entity)
 - **Triggers:** 
   - Payment validation (amount must match package price)
   - Payment audit logging (INSERT, UPDATE, DELETE)
