@@ -388,7 +388,38 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE sp_delete_member(IN p_member INT)
 BEGIN
+  DECLARE v_is_active TINYINT(1);
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION
+  BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+  
+  START TRANSACTION;
+  
+  -- Check if member is active
+  SET v_is_active = fn_is_member_active(p_member);
+  
+  IF v_is_active = 1 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Cannot delete active member. Please wait until membership expires.';
+  END IF;
+  
+  -- Member is not active, proceed with deletion
+  -- First, delete related records to satisfy foreign key constraints
+  
+  -- Delete attendance records (weak entity - depends on member)
+  DELETE FROM Attendance WHERE MemberId = p_member;
+  
+  -- Delete member-workout plan associations
+  DELETE FROM Member_WorkOutPlan WHERE MemberId = p_member;
+  
+  -- Delete payment records (audit trail in Payment_Audit will remain)
+  DELETE FROM Payment WHERE MemberId = p_member;
+  
+  -- Now delete the member
   DELETE FROM Member WHERE MemberId = p_member;
+  
+  COMMIT;
 END//
 DELIMITER ;
 

@@ -310,6 +310,7 @@ MINI-PROJECT/
 ### Admin
 - Full access to all features
 - Member CRUD operations (Create, Read, Update, Delete)
+  - **Note**: Active members cannot be deleted (business rule enforced by stored procedure)
 - Process payments for any member
 - Enroll any member to any plan
 - Mark attendance for all members
@@ -349,6 +350,17 @@ MINI-PROJECT/
 - **Trainer Restriction**: Trainers can only enroll their assigned members
 - **Plan Selection**: Dropdown selection for available workout plans
 - **Member Selection**: Filtered based on role (trainer sees only assigned members)
+
+### Member Management
+- **CRUD Operations**: Admin can create, read, update, and delete members
+- **Delete Restriction**: Active members cannot be deleted - only inactive/expired members can be removed
+  - System checks membership status using `fn_is_member_active` before deletion
+  - Prevents deletion of members with active subscriptions
+  - Error message: "Cannot delete active member. Please wait until membership expires."
+- **Cascade Deletion**: When deleting an inactive member, the system automatically deletes:
+  - All attendance records for that member
+  - All member-workout plan associations
+  - All payment records (audit trail in Payment_Audit table is preserved for historical records)
 
 ### Member-Trainer Relationship
 - **Trainer View**: See all assigned members with full contact details and their plans
@@ -437,7 +449,7 @@ MINI-PROJECT/
 - `/members` - List all members
 - `/members/create` - Create new member
 - `/members/<id>/edit` - Edit member details
-- `/members/<id>/delete` - Delete member
+- `/members/<id>/delete` - Delete member (only if member is inactive/expired)
 - `/actions/make_payment` - Process payment for any member
 - `/actions/enroll` - Enroll any member to any plan
 - `/actions/mark_attendance` - Mark attendance for any member
@@ -466,6 +478,7 @@ MINI-PROJECT/
 ## Development Notes
 
 - **Database Architecture**: All database operations use stored procedures and functions - no direct SQL queries in application code
+- **Business Rules**: Active members cannot be deleted (enforced by `sp_delete_member` stored procedure using `fn_is_member_active`)
 - **ACID Compliance**: All stored procedures wrapped in transactions with ROLLBACK on errors
 - **Error Handling**: Comprehensive error handling prevents crashes on database errors
 - **Security**: Role-based access control protects routes with decorators (`@role_required`)
