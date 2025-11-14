@@ -8,14 +8,17 @@ A comprehensive database-driven web application for managing gym operations, inc
 - **Unified Login System**: Single login page for all user types (Admin, Member, Trainer)
 - **CRUD Operations**: Full Create, Read, Update, Delete for Member management (Admin)
 - **Database Triggers**: Automatic validation and audit logging for payments
-- **Stored Procedures & Functions**: Business logic encapsulated in database routines
-  - `sp_enroll_member_to_plan`: Enroll members to workout plans
-  - `sp_make_payment`: Process payments with automatic audit
-  - `sp_record_attendance` ⁠: Track member attendance
-  - `fn_membership_end_date`: Calculate membership expiration
-  - `fn_is_member_active`: Check member active status
-- **MySQL Console**: Admin can execute SQL queries directly from the UI
-- **Payment Management**: 
+- **Stored Procedures & Functions**: All database operations use stored procedures and functions (no direct SQL queries in application code)
+  - **Authentication**: `sp_get_admin_by_email`, `sp_get_member_by_email`, `sp_get_trainer_by_email`
+  - **Member Management**: `sp_get_members`, `sp_get_member_detail`, `sp_create_member`, `sp_update_member`, `sp_delete_member`, `sp_list_members_basic`, `sp_list_members_for_trainer`, `sp_get_member_basic`
+  - **Reference Data**: `sp_list_packages`, `sp_list_trainers`, `sp_list_workout_plans`, `sp_get_package_price`, `sp_list_equipment`, `sp_list_exercises`
+  - **Business Operations**: `sp_enroll_member_to_plan`, `sp_make_payment`, `sp_record_attendance`
+  - **Member-Trainer Relations**: `sp_get_trainer_members`, `sp_get_member_plans`, `sp_get_member_plans_with_trainer`, `sp_get_member_trainer_info`, `sp_verify_member_trainer`
+  - **Membership Insights**: `sp_get_membership_end_dates`, `sp_get_membership_end_date_for_member`, `sp_get_active_status_all`, `sp_get_active_status_for_trainer`
+  - **Attendance**: `sp_get_attendance_all`, `sp_get_attendance_for_trainer`
+  - **Payment Audit**: `sp_get_payment_audit_all`, `sp_get_payment_audit_for_member`
+  - **Stored Functions**: `fn_membership_end_date`, `fn_is_member_active`
+- **MySQL Console**: Admin can execute SQL queries directly from the UI ⁠- **Payment Management**: 
   - Members can make payments and view their own payment history
   - Admin can process payments for any member
   - Automatic amount calculation from package selection
@@ -28,10 +31,14 @@ A comprehensive database-driven web application for managing gym operations, inc
   - Admin can mark attendance for all members
   - Automatic time validation (check-out must be after check-in)
   - View attendance records with member details and duration
+- **Equipment Inventory**: Admin can view equipment stock levels and quantities
 - **Exercise Library**:
-  - Trainers and admins can browse all exercises with default sets/reps
+  - Trainers can browse all exercises with default sets/reps
   - Shows associated equipment (or bodyweight) for each exercise
+  - Displays muscle groups and exercise details
+- **Weak Entity Implementation**: Attendance table uses composite PRIMARY KEY (MemberId, Date) as a weak entity
 - **ACID Compliance**: All database operations use transactions for data integrity
+- **Automated Testing**: TESTS.sql provides automated integrity and ACID compliance tests
 
 ## Prerequisites
 
@@ -100,10 +107,16 @@ SOURCE GymMemberShip_WorkOutTracker.sql;
 SOURCE REVIEW-3.sql;
 ```
 
+**Optional - Run Tests:**
+```sql
+SOURCE TESTS.sql;
+```
+
 **Note:** Make sure you're in the correct directory or provide full paths:
 ```sql
 SOURCE /full/path/to/GymMemberShip_WorkOutTracker.sql;
 SOURCE /full/path/to/REVIEW-3.sql;
+SOURCE /full/path/to/TESTS.sql;  -- Optional
 ```
 
 Verify setup:
@@ -221,7 +234,8 @@ MINI-PROJECT/
 ├── env.example                     # Environment variables template
 ├── .gitignore                      # Git ignore rules
 ├── GymMemberShip_WorkOutTracker.sql  # Database schema and seed data
-├── REVIEW-3.sql                    # Triggers, procedures, and functions
+├── REVIEW-3.sql                    # Triggers, stored procedures, and functions
+├── TESTS.sql                       # Automated integrity and ACID compliance tests
 ├── templates/                      # HTML templates
 │   ├── base.html                   # Base template with Bootstrap navigation
 │   ├── dashboard.html              # Role-based dashboard
@@ -295,14 +309,14 @@ MINI-PROJECT/
 
 ### Admin
 - Full access to all features
-- Member CRUD operations
+- Member CRUD operations (Create, Read, Update, Delete)
 - Process payments for any member
 - Enroll any member to any plan
 - Mark attendance for all members
 - View attendance for all members
 - View membership end dates for all members
 - View active status for all members
-- View equipment inventory
+- View equipment inventory (stock levels and quantities)
 - Browse exercise library with equipment details
 - MySQL console for direct SQL execution
 - View all payment audit trails
@@ -321,6 +335,7 @@ MINI-PROJECT/
 - Mark attendance only for assigned members
 - View attendance records for assigned members
 - View active status for assigned members
+- Browse exercise library with equipment details
 
 ## Key Functionality
 
@@ -361,9 +376,14 @@ MINI-PROJECT/
   - Trainers can view active status for assigned members only
   - Displays membership end date alongside status
 
+### Equipment Inventory
+- **Stock Management**: View all equipment with current quantities
+- **Access Control**: Available to admin from dashboard and navigation
+- **Real-time Data**: Shows equipment availability and stock levels
+
 ### Exercise Library
 - **Comprehensive List**: Shows all exercises with muscle group, default sets/reps
-- **Equipment Mapping**: Highlights required equipment (or bodyweight)
+- **Equipment Mapping**: Highlights required equipment (or bodyweight if no equipment needed)
 - **Access Control**: Available to trainers and admins from dashboards and navigation
 - **Inventory Integration**: Links with equipment data to monitor usage
 
@@ -405,22 +425,90 @@ MINI-PROJECT/
 - Verify browser console for errors
 - Check network tab in browser DevTools
 
+## Application Routes
+
+### Public Routes
+- `/` - Home page (redirects to dashboard if logged in, login if not)
+- `/login` - Unified login page for Admin, Member, and Trainer
+- `/logout` - Logout and clear session
+
+### Admin Routes
+- `/dashboard` - Admin dashboard with all features
+- `/members` - List all members
+- `/members/create` - Create new member
+- `/members/<id>/edit` - Edit member details
+- `/members/<id>/delete` - Delete member
+- `/actions/make_payment` - Process payment for any member
+- `/actions/enroll` - Enroll any member to any plan
+- `/actions/mark_attendance` - Mark attendance for any member
+- `/attendance/view` - View all attendance records
+- `/membership/end_date` - View membership end dates for all members
+- `/membership/active_status` - View active status for all members
+- `/equipment` - View equipment inventory
+- `/exercises` - Browse exercise library
+- `/mysql-console` - Execute SQL queries directly
+
+### Member Routes
+- `/dashboard` - Member dashboard
+- `/actions/make_payment` - Make payment (only for themselves)
+- `/member/my-trainer` - View assigned trainer and plans
+- `/membership/end_date` - View own membership end date
+
+### Trainer Routes
+- `/dashboard` - Trainer dashboard
+- `/trainer/members` - View assigned members with contact details
+- `/actions/enroll` - Enroll assigned members to plans
+- `/actions/mark_attendance` - Mark attendance for assigned members
+- `/attendance/view` - View attendance for assigned members
+- `/membership/active_status` - View active status for assigned members
+- `/exercises` - Browse exercise library
+
 ## Development Notes
 
-- All database operations use transactions for ACID compliance
-- Error handling prevents crashes on database errors
-- Role-based access control protects routes with decorators
-- Session management for user authentication
-- Bootstrap 5.3.8 for modern, responsive UI
-- Green buttons for login, red buttons for logout and danger operations
-- All SQL queries use parameterized statements to prevent SQL injection
+- **Database Architecture**: All database operations use stored procedures and functions - no direct SQL queries in application code
+- **ACID Compliance**: All stored procedures wrapped in transactions with ROLLBACK on errors
+- **Error Handling**: Comprehensive error handling prevents crashes on database errors
+- **Security**: Role-based access control protects routes with decorators (`@role_required`)
+- **Session Management**: Flask session management for user authentication and role storage
+- **UI Framework**: Bootstrap 5.3.8 for modern, responsive UI
+- **Color Scheme**: Green buttons for login, red buttons for logout and danger operations
+- **SQL Injection Prevention**: All queries use parameterized statements via stored procedures
+- **Weak Entity**: Attendance table properly implements weak entity pattern with composite PK
 
 ## ACID Properties Implementation
 
-- **Atomicity**: All stored procedures wrapped in transactions with ROLLBACK on errors
-- **Consistency**: Foreign keys, constraints, and triggers ensure data integrity
-- **Isolation**: InnoDB engine provides default isolation level
-- **Durability**: InnoDB engine ensures committed transactions are durable
+- **Atomicity**: All stored procedures wrapped in transactions with ROLLBACK on errors using `START TRANSACTION`, `COMMIT`, and `ROLLBACK`
+- **Consistency**: Foreign keys, constraints (UNIQUE, CHECK), and triggers ensure data integrity
+- **Isolation**: InnoDB engine provides default isolation level (REPEATABLE READ)
+- **Durability**: InnoDB engine with transaction logs ensures committed transactions are durable
+
+## Database Triggers
+
+All triggers are automatically executed by the database:
+
+1. **`trg_attendance_check_times`** - Validates check-out time is after check-in time on INSERT
+2. **`trg_attendance_check_times_upd`** - Validates check-out time is after check-in time on UPDATE
+3. **`trg_payment_validate`** - Validates payment amount matches package price before INSERT
+4. **`trg_payment_audit`** - Logs payment INSERT operations to Payment_Audit table
+5. **`trg_payment_validate_upd`** - Validates payment amount matches package price before UPDATE
+6. **`trg_payment_audit_upd`** - Logs payment UPDATE operations with before/after values
+7. **`trg_payment_audit_del`** - Logs payment DELETE operations
+
+## Testing
+
+The project includes automated tests in `TESTS.sql`:
+
+- **T1**: Payment validation rejects wrong amount
+- **T2**: Payment INSERT creates audit row
+- **T3**: Attendance composite PK prevents duplicate entries per member per day
+- **T4**: CASCADE delete on WorkOutPlan -> Member_WorkOutPlan
+- **T5**: RESTRICT delete prevents removing Member with Payments
+- **T6**: Function `fn_is_member_active` returns 0 for member without payments
+
+Run tests:
+```sql
+SOURCE TESTS.sql;
+```
 
 ## License
 
