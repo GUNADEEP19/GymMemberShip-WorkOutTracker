@@ -1,4 +1,4 @@
-# Gym Membership & Workout Tracker
+# Gym Management
 
 A comprehensive database-driven web application for managing gym operations, including members, trainers, workout plans, attendance, and payments. Built with Flask (Python) and MySQL.
 
